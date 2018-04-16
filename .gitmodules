@@ -1,0 +1,6 @@
+[submodule "cmake"]
+	path = cmake
+	url = https://github.com/biojppm/cmake
+[submodule "extern/rapidyaml"]
+	path = extern/rapidyaml
+	url = https://github.com/biojppm/rapidyaml
