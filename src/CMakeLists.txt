@@ -2,6 +2,7 @@ set(src
     c4/tpl/common.hpp
     c4/tpl/engine.hpp
     c4/tpl/mgr.hpp
+    c4/tpl/pool.hpp
     c4/tpl/rope.hpp
     c4/tpl/token_container.cpp
     c4/tpl/token_container.hpp

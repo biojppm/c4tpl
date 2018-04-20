@@ -2,57 +2,52 @@
 #define _C4_TPL_MGR_HPP_
 
 #include <stddef.h>
+#include <c4/allocator.hpp>
+#include <c4/memory_util.hpp>
 
 namespace c4 {
 namespace tpl {
 
-namespace detail {
-template< size_t num_, size_t v_, bool bit1 > struct _lsb;
-template< size_t num_, size_t v_ >
-struct _lsb< num_, v_, true >
-{
-    enum : size_t { num = num_ };
-};
-template< size_t num_, size_t v_ >
-struct _lsb< num_, v_, false >
-{
-    enum : size_t { num = _lsb< num_+1, (v_>>1), ((v_>>1)&1) >::num };
-};
-} // namespace detail
-
-/** TMP version of lsb(); this needs to be implemented with template
- * meta-programming because C++11 cannot use a constexpr function with
- * local variables
- * @see lsb */
-template< class I, size_t v >
-struct lsb11
-{
-    static_assert(v != 0, "v != 0");
-    enum : I { value = (I)detail::_lsb< 0, v, (v&1) >::num };
-};
-
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#define C4_DECLARE_MANAGED(cls, base, idx) \
-public:\
-\
-    using base_type = base;\
-\
-private:\
-\
-    static idx _s_type_id;\
-    idx m_id;\
-\
-public:\
-\
-    inline idx id() const { return m_id; }\
-    static inline idx s_type_id() { return _s_type_id; }\
-    static inline csubstr s_type_name() { return csubstr(#cls); }\
-\
-private:\
-\
+#define C4_DECLARE_MANAGED(cls, base, idx)                          \
+public:                                                             \
+                                                                    \
+    using base_type = base;                                         \
+                                                                    \
+    static idx _s_type_id;                                          \
+    static idx _s_set_type_id(idx id)                               \
+    {                                                               \
+        C4_ASSERT_MSG(_s_type_id == (idx)-1, "type id was already set"); \
+        _s_type_id = id;                                            \
+        return _s_type_id;                                          \
+    }                                                               \
+                                                                    \
+    static cls* _s_create(void *mem)                                \
+    {                                                               \
+        new (mem) cls();                                            \
+        return (cls*) mem;                                          \
+    }                                                               \
+    static void _s_destroy(void *mem)                               \
+    {                                                               \
+        cls *ptr = (cls*)mem;                                       \
+        ptr->~cls();                                                \
+    }                                                               \
+                                                                    \
+private:                                                            \
+                                                                    \
+    idx m_id;                                                       \
+                                                                    \
+public:                                                             \
+                                                                    \
+    inline idx id() const { return m_id; }                          \
+    static inline idx s_type_id() { return _s_type_id; }            \
+    static inline const char* s_type_name() { return #cls; }        \
+                                                                    \
+private:                                                            \
+
 
 #define C4_DEFINE_MANAGED(cls, idx) \
 idx cls::_s_type_id = (idx)-1
@@ -62,212 +57,23 @@ idx cls::_s_type_id = (idx)-1
 (mgr).register_type<cls>()
 
 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-template< class I, I type_shift, I type_mask, I pos_mask >
-struct object_id_tpl
+template< class B, class Pool >
+struct ObjPool : public Pool
 {
-    I m_type_pos;
+    using pfn_create = B* (*)(void *mem);
+    using pfn_destroy = void (*)(void *mem);
+    using I = typename Pool::I;
 
-    object_id_tpl() { m_type_pos = (I)-1; }
-    object_id_tpl(I type_pos)
-    {
-        m_type_pos = type_pos;
-        C4_ASSERT(type() <= type_mask);
-        C4_ASSERT(pos() <= pos_mask);
-    }
-    object_id_tpl(I type_, I pos_)
-    {
-        C4_ASSERT(type_ <= type_mask);
-        C4_ASSERT(pos_ <= pos_mask);
-        m_type_pos = (type_ << type_shift) | pos_;
-    }
+    using Pool::Pool;
 
-    I type() const { return (m_type_pos &  type_mask) >> type_shift; }
-    I pos () const { return (m_type_pos & (~type_mask)); }
-    I id  () const { return  m_type_pos; }
-};
-
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-template< class B, class I >
-struct LinearArenaBase
-{
-    virtual void reserve(size_t cap) = 0;
-    virtual void clear() = 0;
-    virtual void free() = 0;
-    virtual I    claim() = 0;
-    virtual B*   create() = 0;
-};
-
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-/** a collection of objects of a single concrete type inheriting
- * from a base type. Also acts as a linear allocation arena. */
-template< class T, class I, I PageSize=128 >
-struct LinearArena : public LinearArenaBase< typename T::base_type, I >
-{
-    static_assert(PageSize & (PageSize - 1) == 0, "PageSize must be power of two");
-public:
-
-    struct Page
-    {
-        T * mem;
-        I   numpg; ///< number of pages allocated in this block <
-                   ///< (following numpg pages are allocated together
-                   ///< with this, and their numpg is set to 0)
-    };
-
-    csubstr   m_type_name;
-    I         m_type_id;
-
-    Page *    m_pages;
-    I         m_size;
-    I         m_num_pages;
-    allocator_mr<T> m_alloc;
-
-private:
-
-    enum : I
-    {
-        /** id mask: all the bits up to PageSize. Use to extract the position
-         * of an index within a page. */
-        id_mask = I(PageSize) - I(1),
-        /** page lsb: the number of bits complementary to PageSize. Use to
-         * extract the page of an index. */
-        page_lsb = lsb11< I, PageSize >::value,
-    };
-
-    static inline I _page(I id) { return id >> page_lsb; }
-    static inline I _pos (I id) { return id &  id_mask; }
-
-public:
-
-    LinearArena(allocator_mr<T> const& a={})
-        :
-        m_type_name(T::s_type_name()),
-        m_type_id(T::s_type_id()),
-        m_pages(nullptr),
-        m_size(0),
-        m_num_pages(0),
-        m_alloc(a)
-    {
-    }
-    ~LinearArena()
-    {
-        clear();
-        free();
-    }
-
-    LinearArena(LinearArena const& that) = delete;
-    LinearArena(LinearArena     && that) = delete;
-
-    LinearArena& operator= (LinearArena const& that) = delete;
-    LinearArena& operator= (LinearArena     && that) = delete;
-
-public:
-
-    I next_num_pages(size_t cap)
-    {
-        I rem = (cap % PageSize);
-        cap += rem ? PageSize - rem : 0;
-        return cap / PageSize;
-    }
-
-    void reserve(size_t cap) override
-    {
-        if(cap <= capacity()) return;
-        I np = next_num_pages(cap);
-        C4_ASSERT(np > m_num_pages);
-
-        // allocate pages arr
-        auto * pgs = (Page*) m_alloc.allocate(np * sizeof(Page), m_pages);
-        memcpy(pgs, m_pages, m_num_pages * sizeof(Page));
-        m_alloc.free(m_pages, np * sizeof(Page));
-        m_pages = pgs;
-
-        // allocate page mem
-        I more_pages = np - m_num_pages;
-        auto* mem = m_alloc.allocate(more_pages * PageSize * sizeof(T));//, last);
-        // the first page owns the mem (by setting numpg to the number of pages in this mem block)
-        m_pages[m_num_pages]->mem = mem;
-        m_pages[m_num_pages]->numpg = more_pages;
-        // remaining pages only have their pointers set (and numpg is set to 0)
-        for(I i = m_num_pages+1; i < np; ++i)
-        {
-            m_pages[i]->mem = mem + i * PageSize;
-            m_pages[i]->numpg = 0;
-        }
-        m_num_pages = np;
-    }
-
-    void free() override final
-    {
-        if(m_num_pages == 0) return;
-        for(I i = 0; i < m_num_pages; ++i)
-        {
-            Page *p = m_pages + i;
-            if(p->numpg == 0) continue;
-            m_alloc.deallocate(p->mem, p->numpg * PageSize * sizeof(T));
-            i += p->numpg;
-            C4_ASSERT(i <= m_num_pages);
-        }
-        m_alloc.free(m_pages, m_num_pages * sizeof(Page));
-        m_num_pages = 0;
-    }
-
-    void clear() override final
-    {
-        for(I i = 0; i < m_size; ++i)
-        {
-            T *ptr = get(i);
-            ptr->~T();
-        }
-        m_size = 0;
-    }
-
-    I claim() override final
-    {
-        if(m_size == capacity())
-        {
-            reserve(m_size + 1); // adds a single page
-        }
-        return m_size++;
-    }
-
-    struct created_ptr
-    {
-        T *ptr;
-        I  id;
-    };
-
-    created_ptr create() override final
-    {
-        created_ptr cp;
-        cp.id = claim();
-        cp.ptr = get(cp.id);
-        new (cp.ptr) T();
-        return cp;
-    }
-
-public:
-
-    inline T* get(I id) const
-    {
-        I pg = _page(id), pos = _pos(id);
-        T *mem = (char*) m_pages[pg].mem;
-        mem += pos * sizeof(T);
-        return (T*) mem;
-    }
-
-    inline I size() const { return m_size; }
-    inline I capacity() const { return m_num_pages * PageSize; }
+    I           m_type_id;
+    csubstr     m_type_name;
+    pfn_create  m_type_create;
+    pfn_destroy m_type_destroy;
 
 };
 
@@ -276,39 +82,30 @@ public:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 /** A manager of objects with a common base type. */
-template< class B, typename I=uint32_t, uint8_t Tbits=4 >
+template< class B, class Pool, size_t NumPoolsMax=0 >
 struct ObjMgr
 {
-public:
+    using pool_type = ObjectPool<B, Pool>;
+    using I = typename pool_type::I;
 
-    enum : I {
-        type_shift = 8 * sizeof(I) - Tbits,
-        type_mask  = ((I(1) << Tbits) - I(1)) << type_shift,
-        pos_mask   = (~(I(1) & I(0))) & (~type_mask)
-    };
-
-public:
-
-    template< class T >
-    using ColT = LinearArena< T, I >;
-    using ColB = LinearArenaBase< B, I >;
-    using object_id = object_id_tpl< I, type_shift, type_mask, pos_mask >;
-
-    union Col
+    struct name_id
     {
-        Col(){}
-        char mem[sizeof(ColT<B>)];
-        ColT<B> dum;
+        csubstr name;
+        I id;
     };
 
-    std::vector< Col > m_collections;
-    allocator_mr< B >  m_allocator;
+public:
+
+    pool_collection< ObjectPool<B, Pool>, NumPoolsMax > m_pools;
+
+    name_id m_type_ids; ///< @todo
 
 public:
 
     ObjMgr()
     {
     }
+
     ~ObjMgr()
     {
         clear();
@@ -325,18 +122,12 @@ public:
 
     void clear()
     {
-        for(auto &c : m_collections)
-        {
-            c.dum.clear();
-        }
+        m_pools.clear();
     }
 
     void free()
     {
-        for(auto &c : m_collections)
-        {
-            c.dum.free();
-        }
+        m_pools.free();
     }
 
 public:
@@ -344,38 +135,57 @@ public:
     template< class T >
     I register_type()
     {
-        C4_STATIC_ASSERT(sizeof(ColT<T>) == sizeof(Col));
-        C4_STATIC_ASSERT(sizeof(ColT<B>) == sizeof(Col));
-        T::_s_type_id = m_collections.size();
-        m_collections.emplace_back();
-        auto *col = get_col<T>();
-        new ((void*)col) ColT<T>(m_allocator);
-        return T::_s_type_id;
+        static_assert(std::is_base_of< B, T >::value, "B must be base of T");
+        I type_id = m_pools.add_pool();
+        T::_s_set_type_id(type_id);
+        pool_type *p = m_pools.get(type_id);
+        p->m_type_id = type_id;
+        p->m_type_name = to_csubstr(T::s_type_name());
+        p->m_type_create = &T::_s_create;
+        p->m_type_destroy = &T::_s_destroy;
+        return type_id;
     }
 
-    ColT<B>* get_col(I type_id)
+public:
+
+    pool_type * get_pool(I type_id)
     {
-        auto * col = reinterpret_cast<ColT<B>*>(m_collections[type_id]);
-        C4_ASSERT(col->m_type_id == type_id);
-        return col;
+        return m_pools.get_pool(pool_id);
     }
 
     template< class T >
-    ColT<T>* get_col()
+    pool_type * get_pool()
     {
-        auto * col = reinterpret_cast<ColT<T>*>(m_collections[T::s_type_id()]);
-        C4_ASSERT(col->m_type_id == T::s_type_id());
-        return col;
+        I type_id = T::s_type_id();
+        return m_pools.get_pool(type_id);
     }
 
-    /** linear search through the types */
-    ColT<B>* get_col(csubstr type_name)
+    template< class T >
+    pool_type const* get_pool() const
     {
-        for(auto &c : m_collections)
+        I type_id = T::s_type_id();
+        return m_pools.get_pool(type_id);
+    }
+
+    pool_type * get_pool(csubstr type_name)
+    {
+        for(auto &p : m_pools)
         {
-            if(c.dum.m_type_name == type_name)
+            if(p.m_type_name == type_name)
             {
-                return reinterpret_cast<ColT<B>*>(c);
+                return &p;
+            }
+        }
+        return nullptr;
+    }
+
+    pool_type const* get_pool(csubstr type_name) const
+    {
+        for(auto &p : m_pools)
+        {
+            if(p.m_type_name == type_name)
+            {
+                return &p;
             }
         }
         return nullptr;
@@ -383,49 +193,48 @@ public:
 
 public:
 
-    B *get(object_id i) const
+    template< class T, class... CtorArgs >
+    T * create_as(CtorArgs&& ...args)
     {
-        auto *col = get_col(i.type());
-        C4_ASSERT(col->m_type_id == B::s_type_id());
-        B *ptr = col->get(i.pos());
+        I type_id = T::s_type_id();
+        I id = m_pools.claim(type_id);
+        pool_type *p = get_pool(type_id);
+        T* tptr = new (m_pools.get(id)) T(std::forward< CtorArgs >(args)...);
+        tptr->m_id = id;
         return ptr;
     }
 
-    template< class T >
-    T *get_as(object_id i) const
+    B * create(I type_id)
     {
-        auto *col = get_col<T>(i.type());
-        C4_ASSERT(col->m_type_id == T::s_type_id());
-        T *ptr = col->get(i.pos());
+        I id = m_pools.claim(type_id);
+        pool_type *p = get_pool(type_id);
+        B* tptr = p->m_type_create(m_pools.get(id));
+        tptr->m_id = id;
+        return ptr;
+    }
+
+    B * create(csubstr type_name)
+    {
+        pool_type *p = this->get_pool(type_name);
+        I id = m_pools.claim(p->m_type_id);
+        B* tptr = p->m_type_create(m_pools.get(id));
+        tptr->m_id = id;
         return ptr;
     }
 
 public:
 
-    template< class T, class... CtorArgs >
-    T* create_as(CtorArgs&& ...args)
+    B * get(I id) const
     {
-        auto *col = get_col<T>();
-        I pos = col->claim();
-        T *ptr = col->get(pos);
-        object_id id(col->m_type_id, pos);
-        new ((void*)ptr) T(id.m_type_pos, std::forward< CtorArgs >(args)...);
+        B *ptr = (B*) m_pools.get(id);
         return ptr;
     }
 
-    B* create(I type_id)
+    template< class T >
+    T * get_as(I id) const
     {
-        auto *col = get_col(type_id);
-        I pos = col->claim();
-        B *ptr = col->get(pos);
-        object_id id(col->m_type_id, pos);
-        C4_NOT_IMPLEMENTED_MSG("new ((void*)ptr) T(id.m_type_pos)");
+        T *ptr = static_cast< T* >((B*) m_pools.get(id));
         return ptr;
-    }
-
-    B *create(csubstr type_name)
-    {
-        auto *col = get_col(type_name);
     }
 };
 

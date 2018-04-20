@@ -10,4 +10,5 @@ function(c4tpl_add_test name)
 endfunction(c4tpl_add_test)
 
 c4tpl_add_test(rope test_rope.cpp)
+c4tpl_add_test(mgr test_mgr.cpp)
 c4tpl_add_test(engine test_engine.cpp)
