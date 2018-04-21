@@ -523,7 +523,7 @@ void TokenIf::parse_body(TokenContainer *cont) const
     // defend against relocation
 #define _c4this static_cast< TokenIf const* >(cont->get(my_id))
 
-    size_t my_id = cont->get_id(this);
+    size_t my_id = this->id();
     for(auto &b : _c4this->m_blocks)
     {
         b.parse(cont);

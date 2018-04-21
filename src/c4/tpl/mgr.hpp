@@ -5,6 +5,8 @@
 #include <c4/allocator.hpp>
 #include <c4/memory_util.hpp>
 
+#include "c4/tpl/pool.hpp"
+
 namespace c4 {
 namespace tpl {
 
@@ -29,6 +31,10 @@ public:                                                             \
     {                                                               \
         new (mem) cls();                                            \
         return (cls*) mem;                                          \
+    }                                                               \
+    static base* _s_create_base(void *mem)                          \
+    {                                                               \
+        return _s_create(mem);                                      \
     }                                                               \
     static void _s_destroy(void *mem)                               \
     {                                                               \
@@ -66,7 +72,7 @@ struct ObjPool : public Pool
 {
     using pfn_create = B* (*)(void *mem);
     using pfn_destroy = void (*)(void *mem);
-    using I = typename Pool::I;
+    using I = typename Pool::index_type;
 
     using Pool::Pool;
 
@@ -82,10 +88,10 @@ struct ObjPool : public Pool
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 /** A manager of objects with a common base type. */
-template< class B, class Pool, size_t NumPoolsMax=0 >
+template< class B, class Pool, size_t NumPoolsMax >
 struct ObjMgr
 {
-    using pool_type = ObjectPool<B, Pool>;
+    using pool_type = ObjPool<B, Pool>;
     using I = typename pool_type::I;
 
     struct name_id
@@ -96,7 +102,7 @@ struct ObjMgr
 
 public:
 
-    pool_collection< ObjectPool<B, Pool>, NumPoolsMax > m_pools;
+    pool_collection< ObjPool<B, Pool>, NumPoolsMax > m_pools;
 
     name_id m_type_ids; ///< @todo
 
@@ -138,17 +144,17 @@ public:
         static_assert(std::is_base_of< B, T >::value, "B must be base of T");
         I type_id = m_pools.add_pool();
         T::_s_set_type_id(type_id);
-        pool_type *p = m_pools.get(type_id);
+        pool_type *p = m_pools.get_pool(type_id);
         p->m_type_id = type_id;
         p->m_type_name = to_csubstr(T::s_type_name());
-        p->m_type_create = &T::_s_create;
+        p->m_type_create = &T::_s_create_base;
         p->m_type_destroy = &T::_s_destroy;
         return type_id;
     }
 
 public:
 
-    pool_type * get_pool(I type_id)
+    pool_type * get_pool(I pool_id)
     {
         return m_pools.get_pool(pool_id);
     }
@@ -201,7 +207,7 @@ public:
         pool_type *p = get_pool(type_id);
         T* tptr = new (m_pools.get(id)) T(std::forward< CtorArgs >(args)...);
         tptr->m_id = id;
-        return ptr;
+        return tptr;
     }
 
     B * create(I type_id)
@@ -210,7 +216,7 @@ public:
         pool_type *p = get_pool(type_id);
         B* tptr = p->m_type_create(m_pools.get(id));
         tptr->m_id = id;
-        return ptr;
+        return tptr;
     }
 
     B * create(csubstr type_name)
@@ -219,7 +225,7 @@ public:
         I id = m_pools.claim(p->m_type_id);
         B* tptr = p->m_type_create(m_pools.get(id));
         tptr->m_id = id;
-        return ptr;
+        return tptr;
     }
 
 public:

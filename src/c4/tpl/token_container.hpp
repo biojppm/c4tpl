@@ -53,14 +53,15 @@ public:\
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-class TokenContainer
+using TokenPoolType = pool_linear_paged<256, size_t, raw_allocator >;
+constexpr const size_t TokenTypesMax = 32;
+class TokenContainer : public ObjMgr< TokenBase, TokenPoolType, TokenTypesMax >
 {
-    using base_type = ObjMgr<TokenBase, size_t>;
+    using base_type = ObjMgr< TokenBase, TokenPoolType, TokenTypesMax >;
 
 public:
 
     std::vector< csubstr >    m_token_starts;
-    ObjMgr<TokenBase, size_t> m_tokens;
     std::vector< size_t >     m_token_seq;
 
     TokenContainer()
@@ -78,16 +79,7 @@ public:
 
 public:
 
-    size_t next_token(csubstr *rem, TplLocation *loc)
-    {
-        auto result = rem->first_of_any(m_token_starts.begin(), m_token_starts.end());
-        if( ! result) return NONE;
-        TokenBase *t = m_tokens.create(result.pos);
-        m_token_seq.push_back(t->m_id);
-        *rem = rem->sub(result.pos);
-        loc->m_rope_pos.i += result.pos;
-        return t->m_id;
-    }
+    size_t next_token(csubstr *rem, TplLocation *loc);
 
 public:
 
@@ -104,8 +96,8 @@ public:
         token_iterator_impl operator++ () { ++id; return *this; }
         token_iterator_impl operator-- () { ++id; return *this; }
 
-        value_type* operator-> () { return  this_->m_tokens.get(id); }
-        value_type& operator*  () { return *this_->m_tokens.get(id); }
+        value_type* operator-> () { return  this_->get(id); }
+        value_type& operator*  () { return *this_->get(id); }
 
         bool operator!= (token_iterator_impl that) const { C4_ASSERT(this_ == that.this_); return id != that.id; }
         bool operator== (token_iterator_impl that) const { C4_ASSERT(this_ == that.this_); return id == that.id; }
