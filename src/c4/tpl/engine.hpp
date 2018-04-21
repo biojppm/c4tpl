@@ -48,7 +48,7 @@ public:
 
     void render(c4::yml::NodeRef & root, Rope *rope) const
     {
-        if(m_tokens.size() > 0)
+        if( ! m_tokens.empty())
         {
             Rope const* parsed_rope = m_tokens.get(0)->rope();
             if(rope->num_entries() != parsed_rope->num_entries())

@@ -1,6 +1,6 @@
 
 #include <gtest/gtest.h>
-#include "../rope.hpp"
+#include "c4/tpl/rope.hpp"
 
 #if defined(_MSC_VER)
 #   pragma warning(push)

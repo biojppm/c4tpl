@@ -1,8 +1,8 @@
-#include "../engine.hpp"
+#include "c4/tpl/engine.hpp"
 #include "c4/yml/std/vector.hpp"
 #include "c4/yml/parse.hpp"
 
-#include "../../../test_case.hpp"
+//#include "../../../test_case.hpp"
 
 #include <gtest/gtest.h>
 
@@ -33,7 +33,7 @@ void do_engine_test(csubstr tpl, csubstr parsed_tpl, tpl_cases cases)
         tree.clear();
         parsed_yml_buf.assign(c.props_yml.begin(), c.props_yml.end());
         c4::yml::parse(to_substr(parsed_yml_buf), &tree);
-        print_tree(tree);
+        //print_tree(tree);
         eng.render(tree, &rope);
         ret = rope.chain_all_resize(&result_buf);
         EXPECT_EQ(ret, c.result);

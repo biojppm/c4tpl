@@ -103,12 +103,13 @@ struct ObjMgr
 public:
 
     pool_collection< ObjPool<B, Pool>, NumPoolsMax > m_pools;
+    I m_size;
 
     name_id m_type_ids; ///< @todo
 
 public:
 
-    ObjMgr()
+    ObjMgr() : m_pools(), m_size(), m_type_ids()
     {
     }
 
@@ -135,6 +136,9 @@ public:
     {
         m_pools.free();
     }
+
+    bool empty() const { return m_size == 0; }
+    I size() const { return m_size; }
 
 public:
 
@@ -207,6 +211,7 @@ public:
         pool_type *p = get_pool(type_id);
         T* tptr = new (m_pools.get(id)) T(std::forward< CtorArgs >(args)...);
         tptr->m_id = id;
+        ++m_size;
         return tptr;
     }
 
@@ -216,6 +221,7 @@ public:
         pool_type *p = get_pool(type_id);
         B* tptr = p->m_type_create(m_pools.get(id));
         tptr->m_id = id;
+        ++m_size;
         return tptr;
     }
 
@@ -225,7 +231,14 @@ public:
         I id = m_pools.claim(p->m_type_id);
         B* tptr = p->m_type_create(m_pools.get(id));
         tptr->m_id = id;
+        ++m_size;
         return tptr;
+    }
+
+    void release(I id)
+    {
+        m_pools.release(id);
+        --m_size;
     }
 
 public:
