@@ -24,6 +24,10 @@ public:
 
     void parse(csubstr src, Rope *rope)
     {
+        if(m_tokens.num_pools() == 0)
+        {
+            register_known_tokens(m_tokens);
+        }
         m_src = src;
         clear();
         if(m_src.empty()) return;

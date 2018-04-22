@@ -58,9 +58,9 @@ TEST(engine, expr2)
     do_engine_test("foo is {{foo}}, bar is {{bar}}",
                    "foo is <<<expr>>>, bar is <<<expr>>>",
                    tpl_cases{
-                       {"0", "{foo: 1, bar: 10}", "foo is 1, bar is 10"},
-                       {"1", "{foo: 2, bar: 20}", "foo is 2, bar is 20"},
-                       {"2", "{foo: 3, bar: 30}", "foo is 3, bar is 30"},
+                       {"0", "{foo: 1, bar: 20}", "foo is 1, bar is 20"},
+                       {"1", "{foo: 2, bar: 30}", "foo is 2, bar is 30"},
+                       {"2", "{foo: 3, bar: 40}", "foo is 3, bar is 40"},
                    });
 
 }

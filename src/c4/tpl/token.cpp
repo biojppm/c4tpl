@@ -3,6 +3,12 @@
 namespace c4 {
 namespace tpl {
 
+C4_DEFINE_MANAGED(TokenExpression, size_t);
+C4_DEFINE_MANAGED(TokenIf, size_t);
+C4_DEFINE_MANAGED(TokenFor, size_t);
+C4_DEFINE_MANAGED(TokenComment, size_t);
+
+
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

@@ -22,7 +22,7 @@ public:                                                             \
     static idx _s_type_id;                                          \
     static idx _s_set_type_id(idx id)                               \
     {                                                               \
-        C4_ASSERT_MSG(_s_type_id == (idx)-1, "type id was already set"); \
+        C4_ASSERT_MSG(_s_type_id == (idx)-1 || _s_type_id == id, "type id was already set to a different value"); \
         _s_type_id = id;                                            \
         return _s_type_id;                                          \
     }                                                               \
@@ -115,7 +115,6 @@ public:
 
     ~ObjMgr()
     {
-        clear();
         free();
     }
 
@@ -129,11 +128,15 @@ public:
 
     void clear()
     {
-        m_pools.clear();
+        for(auto &p : m_pools)
+        {
+            p.destroy(p.m_type_destroy);
+        }
     }
 
     void free()
     {
+        clear();
         m_pools.free();
     }
 
@@ -143,10 +146,10 @@ public:
 public:
 
     template< class T >
-    I register_type()
+    I register_type(I size=sizeof(T), I align=alignof(T))
     {
         static_assert(std::is_base_of< B, T >::value, "B must be base of T");
-        I type_id = m_pools.add_pool();
+        I type_id = m_pools.add_pool(size, align, 0);
         T::_s_set_type_id(type_id);
         pool_type *p = m_pools.get_pool(type_id);
         p->m_type_id = type_id;
@@ -154,6 +157,11 @@ public:
         p->m_type_create = &T::_s_create_base;
         p->m_type_destroy = &T::_s_destroy;
         return type_id;
+    }
+
+    I num_pools() const
+    {
+        return m_pools.num_pools();
     }
 
 public:
@@ -204,7 +212,7 @@ public:
 public:
 
     template< class T, class... CtorArgs >
-    T * create_as(CtorArgs&& ...args)
+    T * create_from_pool_as(CtorArgs&& ...args)
     {
         I type_id = T::s_type_id();
         I id = m_pools.claim(type_id);
@@ -215,7 +223,7 @@ public:
         return tptr;
     }
 
-    B * create(I type_id)
+    B * create_from_pool(I type_id)
     {
         I id = m_pools.claim(type_id);
         pool_type *p = get_pool(type_id);
@@ -225,7 +233,7 @@ public:
         return tptr;
     }
 
-    B * create(csubstr type_name)
+    B * create_from_pool(csubstr type_name)
     {
         pool_type *p = this->get_pool(type_name);
         I id = m_pools.claim(p->m_type_id);

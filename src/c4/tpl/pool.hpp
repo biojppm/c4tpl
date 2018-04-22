@@ -197,6 +197,15 @@ public:
         m_numpg_allocator.second = {std::forward<AllocatorArgs>(args)...};
     }
 
+    pool_linear_paged(I obj_size, I obj_align, I capacity)
+        :
+        pool_linear_paged()
+    {
+        m_obj_size = obj_size;
+        m_obj_align = obj_align;
+        reserve(capacity);
+    }
+
     template< class ...AllocatorArgs >
     pool_linear_paged(I obj_size, I obj_align, I capacity, varargs_t, AllocatorArgs && ...args)
         :
@@ -231,11 +240,12 @@ public:
     void reserve(I cap)
     {
         I np = (cap + PageSize - 1) / PageSize;
-        C4_ASSERT(np > m_numpg_allocator.first());
+        if(np <= m_numpg_allocator.first()) return;
 
         auto a = m_numpg_allocator.second();
         auto pg_a = a.template rebound<Page>();
         I np_old = m_numpg_allocator.first();
+        m_numpg_allocator.first() = np;
 
         // allocate pages arr
         auto * pgs = pg_a.allocate(np);//, m_pages);
@@ -258,7 +268,6 @@ public:
             m_pages[i].mem = (void*)((char*)mem + i * PageSize);
             m_pages[i].numpg = 0;
         }
-        m_numpg_allocator.first() = np;
     }
 
     void free()
@@ -278,6 +287,19 @@ public:
         a.template rebound<Page>().deallocate(m_pages, np);
         m_numpg_allocator.first() = 0;
         m_pages = nullptr;
+    }
+
+    template< class Destructor >
+    void destroy(Destructor fn)
+    {
+        C4_ASSERT( ! !fn);
+        for(I id = 0; id < m_num_objs; ++id)
+        {
+            void *obj = get(id);
+            C4_ASSERT(obj != nullptr);
+            fn(get(id));
+        }
+        m_num_objs = 0;
     }
 
 public:
@@ -397,7 +419,7 @@ public:
         s_num_pools_max = I(NumPoolsMax),
         s_pool_bits  = msb11< I, NumPoolsMax >::value,
         s_pool_shift = I(8) * I(sizeof(I)) - s_pool_bits,
-        s_pos_mask   = (( ~ I(0)) >> (I(8) * I(sizeof(I)) - s_pool_bits))
+        s_pos_mask   = (( ~ I(0)) >> s_pool_shift)
     };
 
     static constexpr C4_ALWAYS_INLINE I _pool_shift() { return s_pool_shift; }
@@ -433,17 +455,6 @@ public:
         return pool_id;
     }
 
-    void clear()
-    {
-        for(I i = 0; i < m_num_pools; ++i)
-        {
-            Pool *p = get_pool(i);
-            p->~Pool();
-        }
-        m_num_pools = 0;
-    }
-
-
     void free()
     {
         for(I i = 0; i < m_num_pools; ++i)
@@ -459,11 +470,11 @@ public:
     using iterator = Pool*;
     using const_iterator = Pool const*;
 
-    iterator begin() { return m_pools; }
-    iterator end  () { return m_pools + m_num_pools; }
+    iterator begin() { return reinterpret_cast< Pool * >(m_pools); }
+    iterator end  () { return reinterpret_cast< Pool * >(m_pools) + m_num_pools; }
 
-    const_iterator begin() const { return m_pools; }
-    const_iterator end  () const { return m_pools + m_num_pools; }
+    const_iterator begin() const { return reinterpret_cast< Pool const* >(m_pools); }
+    const_iterator end  () const { return reinterpret_cast< Pool const* >(m_pools) + m_num_pools; }
 };
 
 

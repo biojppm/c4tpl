@@ -53,8 +53,9 @@ public:\
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-using TokenPoolType = pool_linear_paged<256, size_t, raw_allocator >;
+using TokenPoolType = pool_linear_paged<256, size_t, allocator_mr<char> >;
 constexpr const size_t TokenTypesMax = 32;
+
 class TokenContainer : public ObjMgr< TokenBase, TokenPoolType, TokenTypesMax >
 {
     using base_type = ObjMgr< TokenBase, TokenPoolType, TokenTypesMax >;
@@ -64,9 +65,7 @@ public:
     std::vector< csubstr >    m_token_starts;
     std::vector< size_t >     m_token_seq;
 
-    TokenContainer()
-    {
-    }
+    using ObjMgr::ObjMgr;
 
     ~TokenContainer();
 

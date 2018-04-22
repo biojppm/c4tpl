@@ -56,12 +56,12 @@ public:
 
     size_t        m_str_size;
 
-    raw_allocator_mr m_alloc;
+    allocator_mr<char> m_alloc;
 
 public:
 
-    Rope(raw_allocator_mr const& a={}) { memset(this, 0, sizeof(*this)); m_head = m_tail = m_free_head = m_free_tail = NONE; m_alloc = a; }
-    Rope(size_t cap, raw_allocator_mr const& a={}) : Rope(a) { reserve(cap); }
+    Rope(allocator_mr<char> const& a={}) { memset(this, 0, sizeof(*this)); m_head = m_tail = m_free_head = m_free_tail = NONE; m_alloc = a; }
+    Rope(size_t cap, allocator_mr<char> const& a={}) : Rope(a) { reserve(cap); }
 
     ~Rope() { _free(); }
 
