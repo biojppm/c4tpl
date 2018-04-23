@@ -80,7 +80,6 @@ struct ObjPool : public Pool
     csubstr     m_type_name;
     pfn_create  m_type_create;
     pfn_destroy m_type_destroy;
-
 };
 
 
@@ -109,7 +108,7 @@ public:
 
 public:
 
-    ObjMgr() : m_pools(), m_size(), m_type_ids()
+    ObjMgr() : m_pools(), m_size(0), m_type_ids()
     {
     }
 

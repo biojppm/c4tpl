@@ -133,6 +133,7 @@ public:
 template< size_t PageSize_, class I, class Allocator >
 struct pool_linear_paged
 {
+    static_assert(PageSize > 0, "PageSize must be nonzero");
     static_assert((PageSize_ & (PageSize_ - 1)) == 0, "PageSize must be a power of two");
     static_assert(std::is_same< char, typename Allocator::value_type >::value, "Allocator must be a raw allocator");
 
@@ -410,7 +411,15 @@ public:
 
 public:
 
+#ifdef NDEBUG
     alignas(alignof(Pool)) char m_pools[NumPoolsMax * sizeof(Pool)];
+#else
+    union
+    {
+        alignas(alignof(Pool)) Pool m_pool_buf[NumPoolsMax];
+        alignas(alignof(Pool)) char m_pools[NumPoolsMax * sizeof(Pool)];
+    };
+#endif
     I m_num_pools;
 
 public:
@@ -424,6 +433,16 @@ public:
 
     static constexpr C4_ALWAYS_INLINE I _pool_shift() { return s_pool_shift; }
     static constexpr C4_ALWAYS_INLINE I _pos_mask() { return s_pos_mask; }
+
+public:
+
+    pool_collection() : m_num_pools(0)
+    {
+    }
+    ~pool_collection()
+    {
+        free();
+    }
 
 public:
 

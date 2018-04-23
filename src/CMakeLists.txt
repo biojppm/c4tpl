@@ -1,4 +1,5 @@
 set(src
+    c4/tpl/c4tpl.natvis
     c4/tpl/common.hpp
     c4/tpl/engine.hpp
     c4/tpl/mgr.hpp
