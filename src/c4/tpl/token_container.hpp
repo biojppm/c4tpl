@@ -2,6 +2,7 @@
 #define _C4_TPL_TOKEN_CONTAINER_HPP_
 
 #include <vector>
+#include <c4/std/vector.hpp>
 #include "c4/tpl/rope.hpp"
 #include "c4/tpl/mgr.hpp"
 

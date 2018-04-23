@@ -3,6 +3,7 @@
 
 #include "c4/tpl/common.hpp"
 #include "c4/allocator.hpp"
+#include "c4/std/std.hpp"
 
 #ifdef __GNUC__
 #   pragma GCC diagnostic push
@@ -591,12 +592,12 @@ public:
     template< class CharOwningContainer >
     substr chain_all_resize(CharOwningContainer * cont) const
     {
-        substr buf(cont->data(), cont->size());
+        substr buf = to_substr(*cont);
         substr ret = chain_all(buf, /*error_on_excess*/false);
         if(ret.str == nullptr)
         {
             cont->resize(ret.len);
-            buf.assign(cont->data(), cont->size());
+            buf = to_substr(*cont);
             ret = chain_all(buf, /*error_on_excess*/true);
         }
         return ret;
