@@ -72,10 +72,10 @@ public:
     I size() const { return m_num_objs; }
     I size_bytes() const { return m_num_objs * m_obj_size; }
 
-    I capacity() const { return m_capacity_allocator.first; }
-    I capacity_bytes() const { return m_capacity_allocator.first * m_obj_size; }
+    I capacity() const { return m_capacity_allocator.first(); }
+    I capacity_bytes() const { return m_capacity_allocator.first() * m_obj_size; }
 
-    Allocator const& allocator() const { return m_capacity_allocator.second; }
+    Allocator const& allocator() const { return m_capacity_allocator.second(); }
 
 public:
 
@@ -84,16 +84,16 @@ public:
         C4_ASSERT(m_num_objs == 0);
         if(m_mem)
         {
-            m_capacity_allocator.second.deallocate(m_mem, m_num_objs * m_obj_size);
+            m_capacity_allocator.second().deallocate((char*)m_mem, m_num_objs * m_obj_size);
         }
     }
 
     void reserve(I num_objs)
     {
-        C4_ERROR_IF(num_objs >= m_capacity_allocator.first && m_num_objs > 0, "cannot relocate objects in pool");
+        C4_ERROR_IF(num_objs >= m_capacity_allocator.first() && m_num_objs > 0, "cannot relocate objects in pool");
         C4_ASSERT(m_mem == nullptr);
         m_capacity_allocator.first = num_objs;
-        m_mem = m_capacity_allocator.second.allocate(num_objs * m_obj_size, m_obj_align);
+        m_mem = m_capacity_allocator.second().allocate(num_objs * m_obj_size, m_obj_align);
         m_num_objs = 0;
     }
 
@@ -102,7 +102,7 @@ public:
     I claim(I n=1)
     {
         C4_ASSERT(n >= 1);
-        C4_ERROR_IF(m_num_objs+n >= m_capacity_allocator.first, "cannot relocate objects in pool");
+        C4_ERROR_IF(m_num_objs+n >= m_capacity_allocator.first(), "cannot relocate objects in pool");
         I id = m_num_objs;
         m_num_objs += n;
         return id;
@@ -133,7 +133,7 @@ public:
 template< size_t PageSize_, class I, class Allocator >
 struct pool_linear_paged
 {
-    static_assert(PageSize > 0, "PageSize must be nonzero");
+    static_assert(PageSize_ > 0, "PageSize must be nonzero");
     static_assert((PageSize_ & (PageSize_ - 1)) == 0, "PageSize must be a power of two");
     static_assert(std::is_same< char, typename Allocator::value_type >::value, "Allocator must be a raw allocator");
 
@@ -159,7 +159,7 @@ public:
      * second: the allocator */
     tight_pair< I, Allocator > m_numpg_allocator;
 
-private:
+public:
 
     enum : I
     {
@@ -377,6 +377,8 @@ public:
 
     C4_CONSTEXPR14 C4_ALWAYS_INLINE I encode_id(I pool_, I pos_) const
     {
+        C4_ASSERT(pool_ <= _c4cthis->_pos_mask());
+        C4_ASSERT(pos_ <= _c4cthis->_pos_mask());
         return (pool_ << _c4cthis->_pool_shift()) | pos_;
     }
 
@@ -387,7 +389,7 @@ public:
 
     C4_CONSTEXPR14 C4_ALWAYS_INLINE I decode_pos(I id) const
     {
-        return (id & (~_c4cthis->_pos_mask()));
+        return id & _c4cthis->_pos_mask();
     }
 
 #undef _c4this
@@ -426,9 +428,9 @@ public:
 
     enum : I {
         s_num_pools_max = I(NumPoolsMax),
-        s_pool_bits  = msb11< I, NumPoolsMax >::value,
+        s_pool_bits  = msb11< I, NumPoolsMax-1 >::value,
         s_pool_shift = I(8) * I(sizeof(I)) - s_pool_bits,
-        s_pos_mask   = (( ~ I(0)) >> s_pool_shift)
+        s_pos_mask   = (( ~ I(0)) >> s_pool_bits)
     };
 
     static constexpr C4_ALWAYS_INLINE I _pool_shift() { return s_pool_shift; }
