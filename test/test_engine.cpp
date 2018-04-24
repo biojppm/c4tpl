@@ -6,6 +6,10 @@
 #include <gtest/gtest.h>
 
 namespace c4 {
+
+inline void PrintTo(const substr& s, ::std::ostream* os) { *os << s; }
+inline void PrintTo(const csubstr& s, ::std::ostream* os) { *os << s; }
+
 namespace tpl {
 
 struct tpl_results { const char* name; csubstr props_yml, result; };
@@ -61,7 +65,6 @@ TEST(engine, expr2)
                        {"1", "{foo: 2, bar: 30}", "foo is 2, bar is 30"},
                        {"2", "{foo: 3, bar: 40}", "foo is 3, bar is 40"},
                    });
-
 }
 
 //-----------------------------------------------------------------------------
@@ -159,7 +162,6 @@ TEST(engine, if_with_vars_everywhere)
                    });
 }
 
-/*
 TEST(engine, if_with_nested_if)
 {
     do_engine_test(
@@ -183,7 +185,6 @@ tpl_cases{
     {"case 22", "{foo: 2, bar: 2}", "  foo is active! foo='2'\n  bar is active! bar='2'"},
 });
 }
-*/
 
 //-----------------------------------------------------------------------------
 TEST(engine, for_simple_no_vars)

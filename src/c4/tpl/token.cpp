@@ -15,14 +15,13 @@ C4_DEFINE_MANAGED(TokenComment, size_t);
 //-----------------------------------------------------------------------------
 void TokenBase::parse(csubstr *rem, TplLocation *curr_pos)
 {
-    auto const &s = stoken(), &e = etoken();
+    auto const s = stoken(), e = etoken();
     C4_ASSERT(rem->begins_with(s));
 
     m_start = *curr_pos;
-    auto pos = rem->find(e);
-    C4_ASSERT(pos != npos);
-    C4_ASSERT(pos + e.len <= rem->len);
-    m_full_text = rem->sub(0, pos + e.len);
+    // look for the end token, but skip nested start/end token pairs
+    csubstr rem2 = skip_nested(*rem);
+    m_full_text = rem->left_of(rem2);
     C4_ASSERT(m_full_text.len >= e.len + s.len);
     C4_ASSERT(m_full_text.begins_with(s));
     C4_ASSERT(m_full_text.ends_with(e));
@@ -448,37 +447,54 @@ void TokenIf::parse(csubstr *rem, TplLocation *curr_pos)
     csubstr s = m_full_text;
     csubstr c = _scan_condition(stoken(), &s);
     condblock *cb = _add_block(c, s);
+    size_t block_beginning = s.str - m_full_text.str;
+    size_t block_size = 0;
 
     // scan the branches
-    while(!s.empty())
+    while( ! s.empty())
     {
         auto result = s.first_of_any("{% endif %}", "{% else %}", "{% elif ", "{% if ");
         C4_ERROR_IF_NOT(result, "invalid {% if %} structure");
         if(result.which == 0) // endif
         {
-            cb->set_body(s.sub(0, result.pos)); // terminate the current block
+            block_size += result.pos;
+            csubstr block_body = m_full_text.sub(block_beginning, block_size);
+            cb->set_body(block_body); // terminate the current block
             break;
         }
         else if(result.which == 1) // else
         {
-            cb->set_body(s.sub(0, result.pos));
-            s = s.sub(result.pos + 10); // 10==strlen("{% else %}")
+            // finish the current block
+            block_size += result.pos;
+            csubstr block_body = m_full_text.sub(block_beginning, block_size);
+            cb->set_body(block_body);
+            // consume the else block
+            block_beginning += block_size + 10;  // 10==strlen("{% else %}")
+            block_size = 0;
+            s = m_full_text.sub(block_beginning); 
             auto pos = s.find("{% endif %}");
             C4_ERROR_IF(pos == npos, "invalid {% if %} structure");
-            s = s.sub(0, pos);
-            cb = _add_block({}, s, /*as_else*/true);
+            block_size += pos;
+            block_body = m_full_text.sub(block_beginning, block_size);
+            cb = _add_block({}, block_body, /*as_else*/true);
             break;
         }
         else if(result.which == 2) // elif
         {
-            cb->set_body(s.sub(0, result.pos));
+            block_size += result.pos;
+            csubstr block_body = m_full_text.sub(block_beginning, block_size);
+            cb->set_body(block_body);
             s = s.sub(result.pos);
-            auto cond = _scan_condition("{% elif ", &s);
-            cb = _add_block(cond, s);
+            csubstr cond = _scan_condition("{% elif ", &s);
+            block_beginning = s.str - m_full_text.str;
+            block_size = 0;
+            cb = _add_block(cond, m_full_text.sub(block_beginning, block_size));
         }
         else if(result.which == 3) // nested if
         {
-            s = skip_nested(s.sub(result.pos));
+            csubstr r = skip_nested(s.sub(result.pos));
+            block_size += (r.str - s.str);
+            s = r;
         }
         else
         {
