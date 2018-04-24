@@ -14,6 +14,25 @@ namespace tpl {
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
+#define C4_DECLARE_MANAGED_BASE(base, idx)                          \
+public:                                                             \
+                                                                    \
+    idx _m_id;                                                      \
+    static idx _s_type_id;                                          \
+                                                                    \
+public:                                                             \
+                                                                    \
+    inline void _set_id(idx id_) { _m_id = id_; }                   \
+    C4_ALWAYS_INLINE idx id() const { return _m_id; }               \
+    virtual idx type_id() const { return _s_type_id; }              \
+    virtual const char* type_name() const { return #base; }         \
+                                                                    \
+private:                                                            \
+
+#define C4_DEFINE_MANAGED_BASE(base, idx) \
+idx base::_s_type_id = (idx)-1
+
+
 #define C4_DECLARE_MANAGED(cls, base, idx)                          \
 public:                                                             \
                                                                     \
@@ -29,12 +48,11 @@ public:                                                             \
                                                                     \
     static cls* _s_create(void *mem)                                \
     {                                                               \
-        new (mem) cls();                                            \
-        return (cls*) mem;                                          \
+        return new (mem) cls();                                     \
     }                                                               \
     static base* _s_create_base(void *mem)                          \
     {                                                               \
-        return _s_create(mem);                                      \
+        return new (mem) cls();                                     \
     }                                                               \
     static void _s_destroy(void *mem)                               \
     {                                                               \
@@ -42,14 +60,9 @@ public:                                                             \
         ptr->~cls();                                                \
     }                                                               \
                                                                     \
-private:                                                            \
-                                                                    \
-    idx m_id;                                                       \
-                                                                    \
-public:                                                             \
-                                                                    \
-    inline idx id() const { return m_id; }                          \
+    virtual idx type_id() const override { return _s_type_id; }     \
     static inline idx s_type_id() { return _s_type_id; }            \
+    virtual const char* type_name() const override { return #cls; } \
     static inline const char* s_type_name() { return #cls; }        \
                                                                     \
 private:                                                            \
@@ -91,6 +104,7 @@ template< class B, class Pool, size_t NumPoolsMax >
 struct ObjMgr
 {
     using pool_type = ObjPool<B, Pool>;
+    using pool_collection_type = pool_collection< ObjPool<B, Pool>, NumPoolsMax >;
     using I = typename pool_type::I;
 
     struct name_id
@@ -217,7 +231,7 @@ public:
         I id = m_pools.claim(type_id);
         pool_type *p = get_pool(type_id);
         T* tptr = new (m_pools.get(id)) T(std::forward< CtorArgs >(args)...);
-        tptr->m_id = id;
+        tptr->_set_id(id);
         ++m_size;
         return tptr;
     }
@@ -227,7 +241,7 @@ public:
         I id = m_pools.claim(type_id);
         pool_type *p = get_pool(type_id);
         B* tptr = p->m_type_create(m_pools.get(id));
-        tptr->m_id = id;
+        tptr->_set_id(id);
         ++m_size;
         return tptr;
     }
@@ -237,7 +251,7 @@ public:
         pool_type *p = this->get_pool(type_name);
         I id = m_pools.claim(p->m_type_id);
         B* tptr = p->m_type_create(m_pools.get(id));
-        tptr->m_id = id;
+        tptr->_set_id(id);
         ++m_size;
         return tptr;
     }
@@ -261,6 +275,57 @@ public:
     {
         T *ptr = static_cast< T* >((B*) m_pools.get(id));
         return ptr;
+    }
+
+public:
+
+    using iterator = pool_iterator_impl< pool_type, B >;
+    using const_iterator = pool_iterator_impl< const pool_type, const B >;
+
+    iterator begin()
+    {
+        if( ! m_pools.empty())
+        {
+            return iterator(&m_pools.front(), &m_pools.back(), 0);
+        }
+        else
+        {
+            return iterator(nullptr, nullptr, 0);
+        }
+    }
+    iterator end()
+    {
+        if( ! m_pools.empty())
+        {
+            return iterator(&m_pools.back(), &m_pools.back(), m_pools.back().m_num_objs);
+        }
+        else
+        {
+            return iterator(nullptr, nullptr, 0);
+        }
+    }
+
+    const_iterator begin() const
+    {
+        if( ! m_pools.empty())
+        {
+            return const_iterator(&m_pools.front(), &m_pools.back(), 0);
+        }
+        else
+        {
+            return const_iterator(nullptr, nullptr, 0);
+        }
+    }
+    const_iterator end() const
+    {
+        if( ! m_pools.empty())
+        {
+            return const_iterator(&m_pools.back(), &m_pools.back(), m_pools.back().m_num_objs);
+        }
+        else
+        {
+            return const_iterator(nullptr, nullptr, 0);
+        }
     }
 };
 

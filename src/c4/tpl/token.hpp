@@ -38,6 +38,8 @@ inline void register_known_tokens(TokenContainer &c)
 
 class TokenBase
 {
+    C4_DECLARE_MANAGED_BASE(TokenBase, size_t)
+
 public:
 
     virtual ~TokenBase() = default;
@@ -49,7 +51,6 @@ public:
 public:
 
     bool m_root_level{true};
-    size_t m_id;
 
     TplLocation m_start;
     TplLocation m_end;

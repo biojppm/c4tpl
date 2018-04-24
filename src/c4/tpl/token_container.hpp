@@ -60,6 +60,7 @@ constexpr const size_t TokenTypesMax = 32;
 class TokenContainer : public ObjMgr< TokenBase, TokenPoolType, TokenTypesMax >
 {
     using base_type = ObjMgr< TokenBase, TokenPoolType, TokenTypesMax >;
+    using pool_type = typename base_type::pool_type;
 
 public:
 
@@ -80,37 +81,6 @@ public:
 public:
 
     size_t next_token(csubstr *rem, TplLocation *loc);
-
-public:
-
-    template< class TkC, class TkB >
-    struct token_iterator_impl
-    {
-        TkC *this_;
-        size_t id;
-
-        using value_type = TkB;
-
-        token_iterator_impl(TkC* t, size_t i_) : this_(t), id(i_) {}
-
-        token_iterator_impl operator++ () { ++id; return *this; }
-        token_iterator_impl operator-- () { ++id; return *this; }
-
-        value_type* operator-> () { return  this_->get(id); }
-        value_type& operator*  () { return *this_->get(id); }
-
-        bool operator!= (token_iterator_impl that) const { C4_ASSERT(this_ == that.this_); return id != that.id; }
-        bool operator== (token_iterator_impl that) const { C4_ASSERT(this_ == that.this_); return id == that.id; }
-    };
-
-    using iterator = token_iterator_impl< TokenContainer, TokenBase >;
-    using const_iterator = token_iterator_impl< const TokenContainer, const TokenBase >;
-
-    iterator begin() { return iterator(this, 0); }
-    iterator end  () { return iterator(this, m_token_seq.size()); }
-
-    const_iterator begin() const { return const_iterator(this, 0); }
-    const_iterator end  () const { return const_iterator(this, m_token_seq.size()); }
 
 };
 

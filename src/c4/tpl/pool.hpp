@@ -330,6 +330,7 @@ public:
 
     void* get(I id) const
     {
+        C4_ASSERT(id < m_num_objs);
         void *mem = ((char*) m_pages[_page(id)].mem) + _pos(id) * m_obj_size;
         return mem;
     }
@@ -377,7 +378,7 @@ public:
 
     C4_CONSTEXPR14 C4_ALWAYS_INLINE I encode_id(I pool_, I pos_) const
     {
-        C4_ASSERT(pool_ <= _c4cthis->_pos_mask());
+        C4_ASSERT(pool_ < _c4cthis->_num_pools_max());
         C4_ASSERT(pos_ <= _c4cthis->_pos_mask());
         return (pool_ << _c4cthis->_pool_shift()) | pos_;
     }
@@ -398,7 +399,7 @@ public:
 C4_END_NAMESPACE(detail)
 
 
-/** pool collection with a compile time-fixed number of pools */
+/** pool collection with a max number of pools fixed at compile time */
 template< class Pool, size_t NumPoolsMax >
 struct pool_collection
     :
@@ -428,13 +429,14 @@ public:
 
     enum : I {
         s_num_pools_max = I(NumPoolsMax),
-        s_pool_bits  = msb11< I, NumPoolsMax-1 >::value,
-        s_pool_shift = I(8) * I(sizeof(I)) - s_pool_bits,
+        s_pool_bits  = msb11< I, NumPoolsMax-1 >::value, /// it's the MSB of the max pool id (which is NumPoolsMax-1)
+        s_pool_shift = I(8) * I(sizeof(I)) - s_pool_bits, /// reserve the highest bits 
         s_pos_mask   = (( ~ I(0)) >> s_pool_bits)
     };
 
     static constexpr C4_ALWAYS_INLINE I _pool_shift() { return s_pool_shift; }
     static constexpr C4_ALWAYS_INLINE I _pos_mask() { return s_pos_mask; }
+    static constexpr C4_ALWAYS_INLINE I _num_pools_max() { return s_num_pools_max; }
 
 public:
 
@@ -450,6 +452,7 @@ public:
 
     static C4_CONSTEXPR14 C4_ALWAYS_INLINE I capacity() { return NumPoolsMax; }
     C4_CONSTEXPR14 C4_ALWAYS_INLINE I num_pools() const { return m_num_pools; }
+    bool empty() const { return m_num_pools == 0; }
 
     C4_CONSTEXPR14 C4_ALWAYS_INLINE Pool* get_pool(I pool)
     {
@@ -496,10 +499,16 @@ public:
 
     const_iterator begin() const { return reinterpret_cast< Pool const* >(m_pools); }
     const_iterator end  () const { return reinterpret_cast< Pool const* >(m_pools) + m_num_pools; }
+
+    Pool& front() { C4_ASSERT(m_num_pools > 0); return *(reinterpret_cast< Pool * >(m_pools)); }
+    Pool& back () { C4_ASSERT(m_num_pools > 0); return *(reinterpret_cast< Pool * >(m_pools) + m_num_pools); }
+
+    Pool const& front() const { C4_ASSERT(m_num_pools > 0); return *(reinterpret_cast< Pool const* >(m_pools)); }
+    Pool const& back () const { C4_ASSERT(m_num_pools > 0); return *(reinterpret_cast< Pool const* >(m_pools) + m_num_pools); }
 };
 
 
-/** pool collection with a run time-determined number of pools */
+/** pool collection with a run time-determined number of pools, allocated from the heap */
 template< class Pool >
 struct pool_collection< Pool, 0 >
     :
@@ -511,6 +520,53 @@ struct pool_collection< Pool, 0 >
     I m_num_pools;
     I m_capacity;
 
+};
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+template< class Pool, class Obj >
+struct pool_iterator_impl
+{
+    using value_type = Obj;
+
+    using pool_type = Pool;
+    using index_type = typename Pool::index_type;
+
+    Pool *pool, *last_valid;
+    index_type pos;
+
+    pool_iterator_impl(pool_type *pool_, pool_type *last_valid_, index_type pos_)
+        : pool(pool_), last_valid(last_valid_), pos(pos_)
+    {
+        if( ! pool) return;
+        _next_if_invalid();
+    }
+
+    void _next_if_invalid()
+    {
+        while(pos == pool->m_num_objs && pool != last_valid)
+        {
+            pos = 0;
+            ++pool;
+        }
+    }
+    void _inc()
+    {
+        if( ! pool) return;
+        ++pos;
+        _next_if_invalid();
+    }
+
+    pool_iterator_impl operator++ () { _inc(); return *this; }
+
+    value_type* operator-> () { return  (Obj*)pool->get(pos); }
+    value_type& operator*  () { return *(Obj*)pool->get(pos); }
+
+    bool operator!= (pool_iterator_impl that) const { return pool != that.pool || pos != that.pos; }
+    bool operator== (pool_iterator_impl that) const { return !this->operator!=(that); }
 };
 
 } // namespace c4

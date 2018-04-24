@@ -18,10 +18,10 @@ size_t TokenContainer::next_token(csubstr *rem, TplLocation *loc)
     auto result = rem->first_of_any(m_token_starts.begin(), m_token_starts.end());
     if( ! result) return NONE;
     TokenBase *t = this->create_from_pool(result.which);
-    m_token_seq.push_back(t->m_id);
+    m_token_seq.push_back(t->id());
     *rem = rem->sub(result.pos);
     loc->m_rope_pos.i += result.pos;
-    return t->m_id;
+    return t->id();
 }
 
 } // namespace tpl

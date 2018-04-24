@@ -3,6 +3,7 @@
 namespace c4 {
 namespace tpl {
 
+C4_DEFINE_MANAGED_BASE(TokenBase, size_t);
 C4_DEFINE_MANAGED(TokenExpression, size_t);
 C4_DEFINE_MANAGED(TokenIf, size_t);
 C4_DEFINE_MANAGED(TokenFor, size_t);
@@ -501,7 +502,7 @@ TokenIf::condblock* TokenIf::_add_block(csubstr cond, csubstr s, bool as_else)
     cb->body = s;
     cb->start.m_rope = m_start.m_rope;
     cb->start.m_rope_pos.i = 0;
-    cb->owner_id = this->m_id;
+    cb->owner_id = this->id();
     cb->block_id = m_blocks.size() - 1;
     if(m_blocks.size() == 1)
     {
@@ -652,7 +653,7 @@ void TokenFor::parse(csubstr *rem, TplLocation *curr_pos)
     body = body.right_of(2);
     body = body.triml("\r\n");
 
-    m_block.owner_id = this->m_id;
+    m_block.owner_id = this->id();
     m_block.block_id = 0;
     m_block.body = body;
     m_block.start.m_rope = m_start.m_rope;

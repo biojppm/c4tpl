@@ -55,7 +55,8 @@ public:
     {
         if( ! m_tokens.empty())
         {
-            Rope const* parsed_rope = m_tokens.get(0)->rope();
+            C4_ASSERT(m_tokens.size() == m_tokens.m_token_seq.size());
+            Rope const* parsed_rope = m_tokens.get(m_tokens.m_token_seq[0])->rope();
             if(rope->num_entries() != parsed_rope->num_entries())
             {
                 *rope = *parsed_rope;
