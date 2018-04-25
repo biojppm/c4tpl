@@ -164,26 +164,19 @@ TEST(engine, if_with_vars_everywhere)
 
 TEST(engine, if_with_nested_if)
 {
-    do_engine_test(
-R"({% if foo %}
-  foo is active! foo='{{foo}}'
-  {% if bar %}
-  bar is active! bar='{{bar}}'
-  {% endif %}
-{% endif %}
-)",
-"<<<if>>>",
-tpl_cases{
-    {"case 0", "{}", ""},
-    {"case 10", "{foo: 1}", "  foo is active! foo='1'"},
-    {"case 20", "{foo: 2}", "  foo is active! foo='2'"},
-    {"case 01", "{bar: 1}", ""},
-    {"case 02", "{bar: 2}", ""},
-    {"case 11", "{foo: 1, bar: 1}", "  foo is active! foo='1'\n  bar is active! bar='1'"},
-    {"case 12", "{foo: 1, bar: 2}", "  foo is active! foo='1'\n  bar is active! bar='2'"},
-    {"case 21", "{foo: 2, bar: 1}", "  foo is active! foo='2'\n  bar is active! bar='1'"},
-    {"case 22", "{foo: 2, bar: 2}", "  foo is active! foo='2'\n  bar is active! bar='2'"},
-});
+    do_engine_test(R"({% if foo %}foo is active! foo='{{foo}}'.{% if bar %} bar is active! bar='{{bar}}'.{% endif %}{% endif %})",
+                   "<<<if>>>",
+                   tpl_cases{
+                       {"case 0", "{}", ""},
+                       {"case 10", "{foo: 1}", "foo is active! foo='1'."},
+                       {"case 20", "{foo: 2}", "foo is active! foo='2'."},
+                       {"case 01", "{bar: 1}", ""},
+                       {"case 02", "{bar: 2}", ""},
+                       {"case 11", "{foo: 1, bar: 1}", "foo is active! foo='1'. bar is active! bar='1'."},
+                       {"case 12", "{foo: 1, bar: 2}", "foo is active! foo='1'. bar is active! bar='2'."},
+                       {"case 21", "{foo: 2, bar: 1}", "foo is active! foo='2'. bar is active! bar='1'."},
+                       {"case 22", "{foo: 2, bar: 2}", "foo is active! foo='2'. bar is active! bar='2'."},
+                   });
 }
 
 //-----------------------------------------------------------------------------

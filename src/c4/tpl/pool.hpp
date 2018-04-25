@@ -454,6 +454,9 @@ public:
     C4_CONSTEXPR14 C4_ALWAYS_INLINE I num_pools() const { return m_num_pools; }
     bool empty() const { return m_num_pools == 0; }
 
+    C4_CONSTEXPR14 C4_ALWAYS_INLINE Pool      * pools()       { return reinterpret_cast< Pool* >(m_pools); }
+    C4_CONSTEXPR14 C4_ALWAYS_INLINE Pool const* pools() const { return reinterpret_cast< Pool* >(m_pools); }
+
     C4_CONSTEXPR14 C4_ALWAYS_INLINE Pool* get_pool(I pool)
     {
         C4_ASSERT(pool <= m_num_pools);

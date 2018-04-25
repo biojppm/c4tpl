@@ -266,7 +266,7 @@ void TemplateBlock::clear(Rope *rope) const
     {
         if(p.token != NONE)
         {
-            rope->replace(tokens->get(p.token)->rope_entry(), {});
+            tokens->get(p.token)->clear(rope);
         }
         else
         {
@@ -638,6 +638,14 @@ size_t TokenIf::duplicate(NodeRef & root, Rope *rope, size_t start_entry) const
     return start_entry;
 }
 
+void TokenIf::clear(Rope *rope) const
+{
+    for(auto const& cb : m_blocks)
+    {
+        cb.clear(rope);
+    }
+}
+
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -691,6 +699,11 @@ size_t TokenFor::render(NodeRef & root, Rope * rope) const
 size_t TokenFor::duplicate(NodeRef & root, Rope *rope, size_t start_entry) const
 {
     return _do_render(root, rope, start_entry, true);
+}
+
+void TokenFor::clear(Rope *rope) const
+{
+    m_block.clear(rope);
 }
 
 size_t TokenFor:: _do_render(NodeRef& root, Rope *rope, size_t start_entry, bool duplicating) const

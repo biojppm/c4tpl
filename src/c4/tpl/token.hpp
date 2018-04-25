@@ -88,6 +88,11 @@ public:
         return m_rope_entry;
     }
 
+    virtual void clear(Rope *rope) const
+    {
+        rope->replace(rope_entry(), {});
+    }
+
     static NodeRef get_property(NodeRef const& root, csubstr name);
 
     bool eval(NodeRef const& root, csubstr key, csubstr *result) const;
@@ -285,6 +290,8 @@ public:
 
     size_t duplicate(NodeRef & root, Rope *rope, size_t start_entry) const override;
 
+    void clear(Rope *rope) const override;
+
     TemplateBlock* get_block(size_t bid) override { C4_ASSERT(bid < m_blocks.size()); return &m_blocks[bid]; }
 
 public:
@@ -318,6 +325,8 @@ public:
     size_t render(NodeRef & root, Rope *rope) const override;
 
     size_t duplicate(NodeRef & root, Rope *rope, size_t start_entry) const override;
+
+    void clear(Rope *rope) const override;
 
     TemplateBlock* get_block(size_t bid) override { C4_ASSERT(bid == 0); (void)bid; return &m_block; }
 
