@@ -471,13 +471,9 @@ void TokenIf::parse(csubstr *rem, TplLocation *curr_pos)
             // consume the else block
             block_beginning += block_size + 10;  // 10==strlen("{% else %}")
             block_size = 0;
-            s = m_full_text.sub(block_beginning); 
-            auto pos = s.find("{% endif %}");
-            C4_ERROR_IF(pos == npos, "invalid {% if %} structure");
-            block_size += pos;
             block_body = m_full_text.sub(block_beginning, block_size);
             cb = _add_block({}, block_body, /*as_else*/true);
-            break;
+            s = m_full_text.sub(block_beginning);
         }
         else if(result.which == 2) // elif
         {

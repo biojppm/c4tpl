@@ -45,7 +45,7 @@ void do_engine_test(csubstr tpl, csubstr parsed_tpl, tpl_cases cases)
 
 //-----------------------------------------------------------------------------
 
-TEST(engine, expr)
+TEST(expr, basic)
 {
     do_engine_test("foo is {{foo}}",
                    "foo is <<<expr>>>",
@@ -56,7 +56,7 @@ TEST(engine, expr)
                    });
 }
 
-TEST(engine, expr2)
+TEST(expr, basic2)
 {
     do_engine_test("foo is {{foo}}, bar is {{bar}}",
                    "foo is <<<expr>>>, bar is <<<expr>>>",
@@ -68,7 +68,7 @@ TEST(engine, expr2)
 }
 
 //-----------------------------------------------------------------------------
-TEST(engine, if_simple)
+TEST(if, simple)
 {
     do_engine_test("{% if foo %}bar{% endif %}",
                    "<<<if>>>",
@@ -78,7 +78,7 @@ TEST(engine, if_simple)
                    });
 }
 
-TEST(engine, if_simple_empty)
+TEST(if, simple_empty)
 {
     do_engine_test("{% if foo %}{% endif %}",
                    "<<<if>>>",
@@ -88,7 +88,9 @@ TEST(engine, if_simple_empty)
                    });
 }
 
-TEST(engine, if_else_simple)
+//-----------------------------------------------------------------------------
+
+TEST(if_else, simple)
 {
     do_engine_test("{% if foo %}foo{% else %}bar{% endif %}",
                    "<<<if>>>",
@@ -98,7 +100,7 @@ TEST(engine, if_else_simple)
                    });
 }
 
-TEST(engine, if_elif_simple)
+TEST(if_elif, simple)
 {
     do_engine_test("{% if foo %}foo{% elif bar %}bar{% endif %}",
                    "<<<if>>>",
@@ -110,7 +112,7 @@ TEST(engine, if_elif_simple)
                    });
 }
 
-TEST(engine, if_elif_else_simple)
+TEST(if_elif_else, simple)
 {
     do_engine_test("{% if foo %}foo{% elif bar %}bar{% else %}baz{% endif %}",
                    "<<<if>>>",
@@ -124,7 +126,9 @@ TEST(engine, if_elif_else_simple)
                    });
 }
 
-TEST(engine, if_with_vars_in_if_body)
+//-----------------------------------------------------------------------------
+
+TEST(if, with_vars)
 {
     do_engine_test("{% if foo %}foo is active! val={{foo}}{% endif %}",
                    "<<<if>>>",
@@ -136,7 +140,7 @@ TEST(engine, if_with_vars_in_if_body)
                    });
 }
 
-TEST(engine, if_with_vars_in_ifelse_body)
+TEST(if_else, with_vars)
 {
     do_engine_test("{% if foo %}foo is active! foo='{{foo}}' bar='{{bar}}'{% else %}actually, no. foo='{{foo}}' bar='{{bar}}'{% endif %}",
                    "<<<if>>>",
@@ -149,7 +153,7 @@ TEST(engine, if_with_vars_in_ifelse_body)
                    });
 }
 
-TEST(engine, if_with_vars_everywhere)
+TEST(if_elif_else, with_vars)
 {
     do_engine_test("{% if foo %}foo is active! foo='{{foo}}' bar='{{bar}}'{% elif bar %}only bar is active: foo='{{foo}}' bar='{{bar}}'{% else %}actually, no. foo='{{foo}}' bar='{{bar}}'{% endif %}",
                    "<<<if>>>",
@@ -162,9 +166,11 @@ TEST(engine, if_with_vars_everywhere)
                    });
 }
 
-TEST(engine, if_with_nested_if)
+//-----------------------------------------------------------------------------
+
+TEST(if, with_nested_if)
 {
-    do_engine_test(R"({% if foo %}foo is active! foo='{{foo}}'.{% if bar %} bar is active! bar='{{bar}}'.{% endif %}{% endif %})",
+    do_engine_test(R"({% if foo %}foo is active! foo='{{foo}}'{% if bar %}. bar is active! bar='{{bar}}'{% endif %}.{% endif %})",
                    "<<<if>>>",
                    tpl_cases{
                        {"case 0", "{}", ""},
@@ -179,8 +185,113 @@ TEST(engine, if_with_nested_if)
                    });
 }
 
+TEST(if, with_nested_if_else)
+{
+    do_engine_test(R"({% if foo %}foo is active! foo='{{foo}}'{% if bar %}. bar is active! bar='{{bar}}'{% else %}. No bar..{% endif %}.{% endif %})",
+                   "<<<if>>>",
+                   tpl_cases{
+                       {"case 0", "{}", ""},
+                       {"case 10", "{foo: 1}", "foo is active! foo='1'. No bar..."},
+                       {"case 20", "{foo: 2}", "foo is active! foo='2'. No bar..."},
+                       {"case 01", "{bar: 1}", ""},
+                       {"case 02", "{bar: 2}", ""},
+                       {"case 11", "{foo: 1, bar: 1}", "foo is active! foo='1'. bar is active! bar='1'."},
+                       {"case 12", "{foo: 1, bar: 2}", "foo is active! foo='1'. bar is active! bar='2'."},
+                       {"case 21", "{foo: 2, bar: 1}", "foo is active! foo='2'. bar is active! bar='1'."},
+                       {"case 22", "{foo: 2, bar: 2}", "foo is active! foo='2'. bar is active! bar='2'."},
+                   });
+}
+
+TEST(if, with_nested_if_elif_else)
+{
+    do_engine_test(R"({% if foo %}foo is active! foo='{{foo}}'{% if bar %}. bar is active! bar='{{bar}}'{% elif a %}. aaaa{% else %}. No bar nor a..{% endif %}.{% endif %})",
+                   "<<<if>>>",
+                   tpl_cases{
+                       {"case 0", "{}", ""},
+                       {"case 10" , "{foo: 1}", "foo is active! foo='1'. No bar nor a..."},
+                       {"case 20" , "{foo: 2}", "foo is active! foo='2'. No bar nor a..."},
+                       {"case 10a", "{foo: 1, a: 1}", "foo is active! foo='1'. aaaa."},
+                       {"case 20a", "{foo: 2, a: 1}", "foo is active! foo='2'. aaaa."},
+                       {"case 01", "{bar: 1}", ""},
+                       {"case 02", "{bar: 2}", ""},
+                       {"case 11", "{foo: 1, bar: 1}", "foo is active! foo='1'. bar is active! bar='1'."},
+                       {"case 12", "{foo: 1, bar: 2}", "foo is active! foo='1'. bar is active! bar='2'."},
+                       {"case 21", "{foo: 2, bar: 1}", "foo is active! foo='2'. bar is active! bar='1'."},
+                       {"case 22", "{foo: 2, bar: 2}", "foo is active! foo='2'. bar is active! bar='2'."},
+                       {"case 11a", "{foo: 1, a: 1}", "foo is active! foo='1'. aaaa."},
+                       {"case 12a", "{foo: 1, a: 2}", "foo is active! foo='1'. aaaa."},
+                       {"case 21a", "{foo: 2, a: 1}", "foo is active! foo='2'. aaaa."},
+                       {"case 22a", "{foo: 2, a: 2}", "foo is active! foo='2'. aaaa."},
+                   });
+}
+
+TEST(if, with_double_nested_if)
+{
+    do_engine_test(R"({% if foo %}foo is active! foo='{{foo}}'.{% if bar %} bar is active! bar='{{bar}}'.{% if baz %} baz is active! baz='{{baz}}'.{% endif %}{% endif %}{% endif %})",
+                   "<<<if>>>",
+                   tpl_cases{
+                       {"case 000", "{}", ""},
+                       {"case 100", "{foo: 1}", "foo is active! foo='1'."},
+                       {"case 200", "{foo: 2}", "foo is active! foo='2'."},
+                       {"case 010", "{bar: 1}", ""},
+                       {"case 020", "{bar: 2}", ""},
+                       {"case 011", "{baz: 1}", ""},
+                       {"case 022", "{baz: 2}", ""},
+                       {"case 110", "{foo: 1, bar: 1}", "foo is active! foo='1'. bar is active! bar='1'."},
+                       {"case 120", "{foo: 1, bar: 2}", "foo is active! foo='1'. bar is active! bar='2'."},
+                       {"case 210", "{foo: 2, bar: 1}", "foo is active! foo='2'. bar is active! bar='1'."},
+                       {"case 220", "{foo: 2, bar: 2}", "foo is active! foo='2'. bar is active! bar='2'."},
+                       {"case 111", "{foo: 1, bar: 1, baz: 1}", "foo is active! foo='1'. bar is active! bar='1'. baz is active! baz='1'."},
+                       {"case 121", "{foo: 1, bar: 2, baz: 1}", "foo is active! foo='1'. bar is active! bar='2'. baz is active! baz='1'."},
+                       {"case 212", "{foo: 2, bar: 1, baz: 2}", "foo is active! foo='2'. bar is active! bar='1'. baz is active! baz='2'."},
+                       {"case 222", "{foo: 2, bar: 2, baz: 2}", "foo is active! foo='2'. bar is active! bar='2'. baz is active! baz='2'."},
+                   });
+}
+
+TEST(if_elif_else, all_with_nested_if)
+{
+    do_engine_test(R"({% if foo %}foo is active! foo='{{foo}}'{% if v %}. And v!{% endif %}.{% elif bar %}bar is active! bar='{{bar}}'{% if v %}. And v!{% endif %}.{% elif baz %}baz is active! baz='{{baz}}'{% if v %}. And v!{% endif %}.{% else %}no var is active.{% if v %} But v!{% endif %}{% endif %})",
+                   "<<<if>>>",
+                   tpl_cases{
+                       {"case 000f", "{    }", "no var is active."},
+                       {"case 000t", "{v: 1}", "no var is active. But v!"},
+                       {"case 100f", "{foo: 1      }", "foo is active! foo='1'."},
+                       {"case 100t", "{foo: 1, v: 1}", "foo is active! foo='1'. And v!."},
+                       {"case 200f", "{foo: 2      }", "foo is active! foo='2'."},
+                       {"case 200t", "{foo: 2, v: 1}", "foo is active! foo='2'. And v!."},
+                       {"case 010f", "{bar: 1      }", "bar is active! bar='1'."},
+                       {"case 010t", "{bar: 1, v: 1}", "bar is active! bar='1'. And v!."},
+                       {"case 011f", "{baz: 1      }", "baz is active! baz='1'."},
+                       {"case 011t", "{baz: 1, v: 1}", "baz is active! baz='1'. And v!."},
+                       {"case 110f", "{foo: 1, bar: 1      }", "foo is active! foo='1'."},
+                       {"case 110t", "{foo: 1, bar: 1, v: 1}", "foo is active! foo='1'. And v!."},
+                       {"case 120f", "{foo: 1, bar: 2      }", "foo is active! foo='1'."},
+                       {"case 120t", "{foo: 1, bar: 2, v: 1}", "foo is active! foo='1'. And v!."},
+                       {"case 210f", "{foo: 2, bar: 1      }", "foo is active! foo='2'."},
+                       {"case 210t", "{foo: 2, bar: 1, v: 1}", "foo is active! foo='2'. And v!."},
+                       {"case 220f", "{foo: 2, bar: 2      }", "foo is active! foo='2'."},
+                       {"case 220t", "{foo: 2, bar: 2, v: 1}", "foo is active! foo='2'. And v!."},
+                       {"case 010f", "{        bar: 1      }", "bar is active! bar='1'."},
+                       {"case 010t", "{        bar: 1, v: 1}", "bar is active! bar='1'. And v!."},
+                       {"case 020f", "{        bar: 2      }", "bar is active! bar='2'."},
+                       {"case 020t", "{        bar: 2, v: 1}", "bar is active! bar='2'. And v!."},
+                       {"case 001f", "{        baz: 1      }", "baz is active! baz='1'."},
+                       {"case 001t", "{        baz: 1, v: 1}", "baz is active! baz='1'. And v!."},
+                       {"case 002f", "{        baz: 2      }", "baz is active! baz='2'."},
+                       {"case 002t", "{        baz: 2, v: 1}", "baz is active! baz='2'. And v!."},
+                       {"case 000f", "{                    }", "no var is active."},
+                       {"case 000t", "{                v: 1}", "no var is active. But v!"},
+                       {"case 000f", "{                    }", "no var is active."},
+                       {"case 000t", "{                v: 1}", "no var is active. But v!"},
+                       {"case 000f", "{                    }", "no var is active."},
+                       {"case 000t", "{                v: 1}", "no var is active. But v!"},
+                       {"case 000f", "{                    }", "no var is active."},
+                       {"case 000t", "{                v: 1}", "no var is active. But v!"},
+                   });
+}
+
 //-----------------------------------------------------------------------------
-TEST(engine, for_simple_no_vars)
+TEST(for, simple_no_vars)
 {
     do_engine_test("{% for v in var %}this block will repeat{% endfor %}",
                    "<<<for>>>",
@@ -191,8 +302,7 @@ TEST(engine, for_simple_no_vars)
                    });
 }
 
-//-----------------------------------------------------------------------------
-TEST(engine, for_simple)
+TEST(for, simple_with_vars)
 {
     do_engine_test("{% for v in var %}this block will repeat v={{v}}. {% endfor %}",
                    "<<<for>>>",
@@ -203,6 +313,7 @@ TEST(engine, for_simple)
                        {"case 3", "{var: [0, 1, 2, 3, 4, 5]}", "this block will repeat v=0. this block will repeat v=1. this block will repeat v=2. this block will repeat v=3. this block will repeat v=4. this block will repeat v=5. "},
                    });
 }
+
 
 //-----------------------------------------------------------------------------
 TEST(engine, basic)
