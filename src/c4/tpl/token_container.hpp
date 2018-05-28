@@ -69,8 +69,6 @@ public:
 
     using ObjMgr::ObjMgr;
 
-    ~TokenContainer();
-
     template< class T >
     void register_token_type()
     {
