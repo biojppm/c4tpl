@@ -42,12 +42,14 @@ void register_known_tokens(TokenContainer &c);
 \
 public:\
                                                                         \
-    inline virtual csubstr const& stoken() const override { return s_stoken(); } \
-    inline virtual csubstr const& etoken() const override { return s_etoken(); } \
-    inline virtual csubstr const& marker() const override { return s_marker(); } \
-    inline static csubstr const& s_stoken() { static const csubstr s(stok); return s; } \
-    inline static csubstr const& s_etoken() { static const csubstr s(etok); return s; } \
-    inline static csubstr const& s_marker() { static const csubstr s(mrk); return s; } \
+    /** start token */                                                  \
+    inline virtual csubstr stoken() const override { return s_stoken(); } \
+    /** end token */                                                    \
+    inline virtual csubstr etoken() const override { return s_etoken(); } \
+    inline virtual csubstr marker() const override { return s_marker(); } \
+    inline static  csubstr s_stoken() { static const csubstr s(stok); return s; } \
+    inline static  csubstr s_etoken() { static const csubstr s(etok); return s; } \
+    inline static  csubstr s_marker() { static const csubstr s(mrk); return s; } \
 
 #define C4TPL_REGISTER_TOKEN(mgr, cls) mgr.register_token_type<cls>()
 

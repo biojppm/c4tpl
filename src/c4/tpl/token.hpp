@@ -44,9 +44,9 @@ public:
 
     virtual ~TokenBase() = default;
 
-    virtual csubstr const& stoken() const = 0;
-    virtual csubstr const& etoken() const = 0;
-    virtual csubstr const& marker() const = 0;
+    virtual csubstr stoken() const = 0;
+    virtual csubstr etoken() const = 0;
+    virtual csubstr marker() const = 0;
 
 public:
 
