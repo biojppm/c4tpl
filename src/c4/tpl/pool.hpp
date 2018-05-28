@@ -9,10 +9,10 @@ namespace c4 {
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-template< class I, class Allocator >
+template<class I, class Allocator>
 struct pool_linear
 {
-    static_assert(std::is_same< char, typename Allocator::value_type >::value, "Allocator must be a raw allocator");
+    static_assert(std::is_same<char, typename Allocator::value_type>::value, "Allocator must be a raw allocator");
 
 public:
 
@@ -28,7 +28,7 @@ public:
 
     /** first: the capacity, expressed in number of objects
      * second: the allocator */
-    tight_pair< I, Allocator > m_capacity_allocator;
+    tight_pair<I, Allocator> m_capacity_allocator;
 
 public:
 
@@ -44,7 +44,7 @@ public:
     {
     }
 
-    template< class ...AllocatorArgs >
+    template<class ...AllocatorArgs>
     pool_linear(varargs_t, AllocatorArgs && ...args)
         :
         pool_linear()
@@ -52,7 +52,7 @@ public:
         m_capacity_allocator.second = {std::forward<AllocatorArgs>(args)...};
     }
 
-    template< class ...AllocatorArgs >
+    template<class ...AllocatorArgs>
     pool_linear(I obj_size, I obj_align, I capacity, varargs_t, AllocatorArgs && ...args)
         :
         pool_linear(varargs, std::forward<AllocatorArgs>(args)...)
@@ -90,7 +90,7 @@ public:
 
     void reserve(I num_objs)
     {
-        C4_ERROR_IF(num_objs >= m_capacity_allocator.first() && m_num_objs > 0, "cannot relocate objects in pool");
+        C4_ERROR_IF(num_objs>= m_capacity_allocator.first() && m_num_objs > 0, "cannot relocate objects in pool");
         C4_ASSERT(m_mem == nullptr);
         m_capacity_allocator.first = num_objs;
         m_mem = m_capacity_allocator.second().allocate(num_objs * m_obj_size, m_obj_align);
@@ -130,12 +130,12 @@ public:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-template< size_t PageSize_, class I, class Allocator >
+template<size_t PageSize_, class I, class Allocator>
 struct pool_linear_paged
 {
     static_assert(PageSize_ > 0, "PageSize must be nonzero");
     static_assert((PageSize_ & (PageSize_ - 1)) == 0, "PageSize must be a power of two");
-    static_assert(std::is_same< char, typename Allocator::value_type >::value, "Allocator must be a raw allocator");
+    static_assert(std::is_same<char, typename Allocator::value_type>::value, "Allocator must be a raw allocator");
 
     using index_type = I;
     using allocator_type = Allocator;
@@ -157,7 +157,7 @@ public:
 
     /** first: the number of pages
      * second: the allocator */
-    tight_pair< I, Allocator > m_numpg_allocator;
+    tight_pair<I, Allocator> m_numpg_allocator;
 
 public:
 
@@ -169,7 +169,7 @@ public:
         id_mask = PageSize - I(1),
         /** page lsb: the number of bits complementary to PageSize. Use to
          * extract the page of an index. */
-        page_lsb = lsb11< I, PageSize >::value,
+        page_lsb = lsb11<I, PageSize>::value,
     };
 
     static constexpr inline I _page(I id) { return id >> page_lsb; }
@@ -190,7 +190,7 @@ public:
     {
     }
 
-    template< class ...AllocatorArgs >
+    template<class ...AllocatorArgs>
     pool_linear_paged(varargs_t, AllocatorArgs && ...args)
         :
         pool_linear_paged()
@@ -207,7 +207,7 @@ public:
         reserve(capacity);
     }
 
-    template< class ...AllocatorArgs >
+    template<class ...AllocatorArgs>
     pool_linear_paged(I obj_size, I obj_align, I capacity, varargs_t, AllocatorArgs && ...args)
         :
         pool_linear_paged(varargs, std::forward<AllocatorArgs>(args)...)
@@ -290,7 +290,7 @@ public:
         m_pages = nullptr;
     }
 
-    template< class Destructor >
+    template<class Destructor>
     void destroy(Destructor fn)
     {
         C4_ASSERT( ! !fn);
@@ -343,11 +343,11 @@ public:
 //-----------------------------------------------------------------------------
 
 C4_BEGIN_NAMESPACE(detail)
-template< class Pool, class CollectionImpl, class I >
+template<class Pool, class CollectionImpl, class I>
 struct _pool_collection_crtp
 {
-#define _c4this  static_cast< CollectionImpl      *>(this)
-#define _c4cthis static_cast< CollectionImpl const*>(this)
+#define _c4this  static_cast<CollectionImpl      *>(this)
+#define _c4cthis static_cast<CollectionImpl const*>(this)
 
     I claim(I pool, I n=1)
     {
@@ -359,7 +359,7 @@ struct _pool_collection_crtp
 
     void release(I id, I n=1)
     {
-        C4_ASSERT(n >= 1);
+        C4_ASSERT(n>= 1);
         I pool = decode_pool(id);
         I pos = decode_pos(id);
         Pool *p = _c4cthis->get_pool(pool);
@@ -399,11 +399,13 @@ public:
 C4_END_NAMESPACE(detail)
 
 
+//-----------------------------------------------------------------------------
+
 /** pool collection with a max number of pools fixed at compile time */
-template< class Pool, size_t NumPoolsMax >
+template<class Pool, size_t NumPoolsMax>
 struct pool_collection
     :
-    public detail::_pool_collection_crtp< Pool, pool_collection< Pool, NumPoolsMax >, typename Pool::index_type >
+    public detail::_pool_collection_crtp<Pool, pool_collection<Pool, NumPoolsMax>, typename Pool::index_type>
 {
     static_assert((sizeof(Pool) >= alignof(Pool)) && (sizeof(Pool) % alignof(Pool) == 0), "array of pools would align to a lower value");
     static_assert(NumPoolsMax > 0, "invalid parameter");
@@ -419,7 +421,7 @@ public:
 #else
     union
     {
-        alignas(alignof(Pool)) Pool m_pool_buf[NumPoolsMax];
+        alignas(alignof(Pool)) Pool m_pool_buf[NumPoolsMax]; ///< this is only defined in debug builds for easier debugging
         alignas(alignof(Pool)) char m_pools[NumPoolsMax * sizeof(Pool)];
     };
 #endif
@@ -429,8 +431,8 @@ public:
 
     enum : I {
         s_num_pools_max = I(NumPoolsMax),
-        s_pool_bits  = msb11< I, NumPoolsMax-1 >::value, /// it's the MSB of the max pool id (which is NumPoolsMax-1)
-        s_pool_shift = I(8) * I(sizeof(I)) - s_pool_bits, /// reserve the highest bits 
+        s_pool_bits  = msb11<I, NumPoolsMax-1>::value, /// it's the MSB of the max pool id (which is NumPoolsMax-1)
+        s_pool_shift = I(8) * I(sizeof(I)) - s_pool_bits, /// reserve the highest bits
         s_pos_mask   = (( ~ I(0)) >> s_pool_bits)
     };
 
@@ -454,31 +456,31 @@ public:
     C4_CONSTEXPR14 C4_ALWAYS_INLINE I num_pools() const { return m_num_pools; }
     bool empty() const { return m_num_pools == 0; }
 
-    C4_CONSTEXPR14 C4_ALWAYS_INLINE Pool      * pools()       { return reinterpret_cast< Pool* >(m_pools); }
-    C4_CONSTEXPR14 C4_ALWAYS_INLINE Pool const* pools() const { return reinterpret_cast< Pool* >(m_pools); }
+    C4_CONSTEXPR14 C4_ALWAYS_INLINE Pool      * pools()       { return reinterpret_cast<Pool*>(m_pools); }
+    C4_CONSTEXPR14 C4_ALWAYS_INLINE Pool const* pools() const { return reinterpret_cast<Pool*>(m_pools); }
 
     C4_CONSTEXPR14 C4_ALWAYS_INLINE Pool* get_pool(I pool)
     {
         C4_ASSERT(pool <= m_num_pools);
-        return reinterpret_cast< Pool* >(m_pools + pool * sizeof(Pool));
+        return reinterpret_cast<Pool*>(m_pools + pool * sizeof(Pool));
     }
 
     C4_CONSTEXPR14 C4_ALWAYS_INLINE Pool const* get_pool(I pool) const
     {
         C4_ASSERT(pool <= m_num_pools);
-        return reinterpret_cast< Pool const* >(m_pools + pool * sizeof(Pool));
+        return reinterpret_cast<Pool const*>(m_pools + pool * sizeof(Pool));
     }
 
 public:
 
-    template< class... PoolArgs >
+    template<class... PoolArgs>
     I add_pool(PoolArgs && ...args)
     {
         C4_ASSERT(m_num_pools < NumPoolsMax);
         I pool_id = m_num_pools;
         ++m_num_pools;
         Pool *p = get_pool(pool_id);
-        new ((void*)p) Pool(std::forward< PoolArgs >(args)...);
+        new ((void*)p) Pool(std::forward<PoolArgs>(args)...);
         return pool_id;
     }
 
@@ -497,25 +499,27 @@ public:
     using iterator = Pool*;
     using const_iterator = Pool const*;
 
-    iterator begin() { return reinterpret_cast< Pool * >(m_pools); }
-    iterator end  () { return reinterpret_cast< Pool * >(m_pools) + m_num_pools; }
+    iterator begin() { return reinterpret_cast<Pool *>(m_pools); }
+    iterator end  () { return reinterpret_cast<Pool *>(m_pools) + m_num_pools; }
 
-    const_iterator begin() const { return reinterpret_cast< Pool const* >(m_pools); }
-    const_iterator end  () const { return reinterpret_cast< Pool const* >(m_pools) + m_num_pools; }
+    const_iterator begin() const { return reinterpret_cast<Pool const*>(m_pools); }
+    const_iterator end  () const { return reinterpret_cast<Pool const*>(m_pools) + m_num_pools; }
 
-    Pool& front() { C4_ASSERT(m_num_pools > 0); return *(reinterpret_cast< Pool * >(m_pools)); }
-    Pool& back () { C4_ASSERT(m_num_pools > 0); return *(reinterpret_cast< Pool * >(m_pools) + m_num_pools); }
+    Pool& front() { C4_ASSERT(m_num_pools > 0); return *(reinterpret_cast<Pool *>(m_pools)); }
+    Pool& back () { C4_ASSERT(m_num_pools > 0); return *(reinterpret_cast<Pool *>(m_pools) + m_num_pools); }
 
-    Pool const& front() const { C4_ASSERT(m_num_pools > 0); return *(reinterpret_cast< Pool const* >(m_pools)); }
-    Pool const& back () const { C4_ASSERT(m_num_pools > 0); return *(reinterpret_cast< Pool const* >(m_pools) + m_num_pools); }
+    Pool const& front() const { C4_ASSERT(m_num_pools > 0); return *(reinterpret_cast<Pool const*>(m_pools)); }
+    Pool const& back () const { C4_ASSERT(m_num_pools > 0); return *(reinterpret_cast<Pool const*>(m_pools) + m_num_pools); }
 };
 
 
+//-----------------------------------------------------------------------------
+
 /** pool collection with a run time-determined number of pools, allocated from the heap */
-template< class Pool >
-struct pool_collection< Pool, 0 >
+template<class Pool>
+struct pool_collection<Pool, 0>
     :
-    public detail::_pool_collection_crtp< Pool, pool_collection< Pool, 0 >, typename Pool::index_type >
+    public detail::_pool_collection_crtp<Pool, pool_collection<Pool, 0>, typename Pool::index_type>
 {
     using I = typename Pool::index_type;
 
@@ -530,7 +534,7 @@ struct pool_collection< Pool, 0 >
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-template< class Pool, class Obj >
+template<class Pool, class Obj>
 struct pool_iterator_impl
 {
     using value_type = Obj;
