@@ -78,7 +78,7 @@ private:
     {
         if(m_buf)
         {
-          m_alloc.deallocate((char*)m_buf, sizeof(rope_entry) * m_cap);
+            m_alloc.deallocate((char*)m_buf, sizeof(rope_entry) * m_cap);
             m_buf = nullptr;
         }
     }
