@@ -242,6 +242,17 @@ private:
 
 public:
 
+    /// insert an empty entry before the given one
+    /// @return the index of the inserted entry
+    size_t insert_before(size_t next)
+    {
+        C4_ASSERT(next != NONE);
+        size_t i = insert_after(_p(next).m_prev);
+        return i;
+    }
+
+    /// insert an entry before the given one
+    /// @return the index of the inserted entry
     size_t insert_before(size_t next, csubstr s)
     {
         C4_ASSERT(next != NONE);
@@ -251,21 +262,18 @@ public:
         return i;
     }
 
-    size_t insert_before(size_t next)
+    /// insert all the entries from a rope before the given entry index
+    /// @return the index of the last inserted entry
+    size_t insert_before(size_t next, Rope const& that)
     {
         C4_ASSERT(next != NONE);
-        size_t i = insert_after(_p(next).m_prev);
-        return i;
+        return insert_after(_p(next).m_prev, that);
     }
 
-    size_t insert_after(size_t prev, csubstr s)
-    {
-        size_t i = insert_after(prev);
-        _p(i).s = s;
-        m_str_size += s.len;
-        return i;
-    }
+public:
 
+    /// insert an empty entry after the given one
+    /// @return the index of the inserted entry
     size_t insert_after(size_t prev)
     {
         size_t i = _claim();
@@ -295,11 +303,37 @@ public:
         return i;
     }
 
-    size_t prepend(csubstr s) { return insert_after(NONE, s); }
-    size_t prepend() { return insert_after(NONE); }
+    /// insert an entry after the given one
+    /// @return the index of the inserted entry
+    size_t insert_after(size_t prev, csubstr s)
+    {
+        size_t i = insert_after(prev);
+        _p(i).s = s;
+        m_str_size += s.len;
+        return i;
+    }
 
-    size_t append(csubstr s) { return insert_after(m_tail, s); }
+    /// insert all the entries from a rope after the given entry index
+    /// @return the index of the last inserted entry
+    size_t insert_after(size_t prev, Rope const& that)
+    {
+        size_t after = prev;
+        for(auto ss : that.entries())
+        {
+            after = insert_after(after, ss);
+        }
+        return after;
+    }
+
+public:
+
+    size_t prepend() { return insert_after(NONE); }
+    size_t prepend(csubstr s) { return insert_after(NONE, s); }
+    size_t prepend(Rope const& r) { return insert_after(NONE, r); }
+
     size_t append() { return insert_after(m_tail); }
+    size_t append(csubstr s) { return insert_after(m_tail, s); }
+    size_t append(Rope const& r) { return insert_after(m_tail, r); }
 
 public:
 
