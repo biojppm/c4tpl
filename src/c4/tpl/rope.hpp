@@ -29,7 +29,7 @@ public:
         size_t m_next;
     };
 
-    //! an indexer into a rope
+    /// an indexer into a rope
     struct rope_pos
     {
         size_t entry;
@@ -46,22 +46,30 @@ public:
 
 public:
 
-    rope_entry  * m_buf;
-    size_t        m_cap;
-
-    size_t        m_size;
-    size_t        m_head;
-    size_t        m_tail;
-    size_t        m_free_head;
-    size_t        m_free_tail;
-
-    size_t        m_str_size;
-
-    allocator_mr<char> m_alloc;
+    rope_entry  * m_buf;        ///< entry buffer
+    size_t        m_cap;        ///< capacity of the entry buffer
+    size_t        m_size;       ///< current number of entries
+    size_t        m_head;       ///< current head of the entry list
+    size_t        m_tail;       ///< current tail of the entry list
+    size_t        m_free_head;  ///< current head of the entry free list
+    size_t        m_free_tail;  ///< current tail of the entry free list
+    size_t        m_str_size;   ///< the current size of the concatenated string
+    allocator_mr<char> m_alloc; ///< a polymorphic allocator
 
 public:
 
-    Rope(allocator_mr<char> const& a={}) { memset(this, 0, sizeof(*this)); m_head = m_tail = m_free_head = m_free_tail = NONE; m_alloc = a; }
+    Rope(allocator_mr<char> const& a={})
+        : m_buf(nullptr),
+          m_cap(0),
+          m_size(0),
+          m_head(NONE),
+          m_tail(NONE),
+          m_free_head(NONE),
+          m_free_tail(NONE),
+          m_str_size(0),
+          m_alloc(a)
+    {
+    }
     Rope(size_t cap, allocator_mr<char> const& a={}) : Rope(a) { reserve(cap); }
 
     ~Rope() { _free(); }

@@ -83,9 +83,9 @@ idx_type cls::_s_type_id = (idx_type)-1
 template<class B, class Pool>
 struct ObjPool : public Pool
 {
+    using I = typename Pool::index_type;
     using pfn_create = B* (*)(void *mem);
     using pfn_destroy = void (*)(void *mem);
-    using I = typename Pool::index_type;
 
     using Pool::Pool;
 
