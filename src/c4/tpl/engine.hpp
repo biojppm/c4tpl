@@ -17,6 +17,7 @@ public:
 
     Engine() : m_src(), m_tokens() {}
 
+    bool empty() const { return m_tokens.empty() || m_src.empty(); }
     void clear()
     {
         m_tokens.clear();
