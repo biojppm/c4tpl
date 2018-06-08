@@ -14,23 +14,33 @@ namespace tpl {
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#define C4_DECLARE_MANAGED_BASE(base, idx_type)             \
-public:                                                     \
-                                                            \
-    idx_type _m_id;                                         \
-    static idx_type _s_type_id;                             \
-                                                            \
-public:                                                     \
-                                                            \
-    inline void _set_id(idx_type id_) { _m_id = id_; }      \
-    C4_ALWAYS_INLINE idx_type id() const { return _m_id; }  \
-    virtual idx_type type_id() const { return _s_type_id; } \
-    virtual const char* type_name() const { return #base; } \
-                                                            \
+using REFIID = void const*;
+#define __uuidof(T) T::s_uuidof()
+
+
+#define C4_DECLARE_MANAGED_BASE(base, idx_type)                         \
+public:                                                                 \
+                                                                        \
+    idx_type _m_id;                                                     \
+    static idx_type _s_type_id;                                         \
+    static const char _s_##base##_id;                                   \
+                                                                        \
+public:                                                                 \
+                                                                        \
+    inline void _set_id(idx_type id_) { _m_id = id_; }                  \
+    C4_ALWAYS_INLINE idx_type id() const { return _m_id; }              \
+    virtual idx_type type_id() const { return _s_type_id; }             \
+    virtual const char* type_name() const { return #base; }             \
+                                                                        \
+    static REFIID s_uuidof() { return static_cast<REFIID>(&_s_##base##_id); } \
+    virtual REFIID uuidof() const { return static_cast<REFIID>(&_s_##base##_id); } \
+                                                                        \
 private:
 
+
 #define C4_DEFINE_MANAGED_BASE(base, idx_type) \
-idx_type base::_s_type_id = (idx_type)-1
+    idx_type base::_s_type_id = (idx_type)-1;  \
+    const char base::_s_##base##_id = '\0'
 
 
 #define C4_DECLARE_MANAGED(cls, base, idx_type)                         \
@@ -38,7 +48,13 @@ public:                                                                 \
                                                                         \
     using base_type = base;                                             \
                                                                         \
+public:                                                                 \
+                                                                        \
     static idx_type _s_type_id;                                         \
+    static const char _s_##cls##_id;                                    \
+                                                                        \
+public:                                                                 \
+                                                                        \
     static idx_type _s_set_type_id(idx_type id)                         \
     {                                                                   \
         C4_ASSERT_MSG(_s_type_id == (idx_type)-1 || _s_type_id == id, "type id was already set to a different value"); \
@@ -60,16 +76,22 @@ public:                                                                 \
         ptr->~cls();                                                    \
     }                                                                   \
                                                                         \
+public:                                                                 \
+                                                                        \
     virtual idx_type type_id() const override { return _s_type_id; }    \
     static inline idx_type s_type_id() { return _s_type_id; }           \
     virtual const char* type_name() const override { return #cls; }     \
     static inline const char* s_type_name() { return #cls; }            \
                                                                         \
+    static REFIID s_uuidof() { return static_cast<REFIID>(&_s_##cls##_id); } \
+    virtual REFIID uuidof() const override { return static_cast<REFIID>(&_s_##cls##_id); } \
+                                                                        \
 private:
 
 
-#define C4_DEFINE_MANAGED(cls, idx_type) \
-idx_type cls::_s_type_id = (idx_type)-1
+#define C4_DEFINE_MANAGED(cls, idx_type)        \
+    idx_type cls::_s_type_id = (idx_type)-1;    \
+    const char cls::_s_##cls##_id = '\0'
 
 
 #define C4_REGISTER_MANAGED(mgr, cls) \
