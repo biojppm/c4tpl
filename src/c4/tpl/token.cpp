@@ -361,7 +361,7 @@ void IfCondition::parse()
         {
             m_ctype = ARG_LE_CMP;
             m_arg = m_str.left_of(pos).trim(' ');
-            m_cmp = m_str.right_of(pos+1, /*include*/true).trim(' ');
+            m_cmp = m_str.right_of(pos+2, /*include*/true).trim(' ');
         }
         else
         {
@@ -380,7 +380,7 @@ void IfCondition::parse()
         {
             m_ctype = ARG_GE_CMP;
             m_arg = m_str.left_of(pos).trim(' ');
-            m_cmp = m_str.right_of(pos+1, /*include*/true).trim(' ');
+            m_cmp = m_str.right_of(pos+2, /*include*/true).trim(' ');
         }
         else
         {
@@ -398,7 +398,7 @@ void IfCondition::parse()
         C4_ASSERT(m_str[pos+1] == '=');
         m_ctype = ARG_NE_CMP;
         m_arg = m_str.left_of(pos).trim(' ');
-        m_cmp = m_str.right_of(pos+1, /*include*/true).trim(' ');
+        m_cmp = m_str.right_of(pos+2, /*include*/true).trim(' ');
         return;
     }
 
@@ -409,7 +409,7 @@ void IfCondition::parse()
         C4_ASSERT(m_str[pos+1] == '=');
         m_ctype = ARG_EQ_CMP;
         m_arg = m_str.left_of(pos).trim(' ');
-        m_cmp = m_str.right_of(pos+1, /*include*/true).trim(' ');
+        m_cmp = m_str.right_of(pos+2, /*include*/true).trim(' ');
         return;
     }
 

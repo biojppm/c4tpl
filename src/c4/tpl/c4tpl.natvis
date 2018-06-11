@@ -12,7 +12,8 @@ See also:
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
   <Type Name="c4::tpl::Rope::rope_entry">
-    <DisplayString>{s}</DisplayString>
+    <DisplayString>{s.str,[s.len]} (sz={s.len})</DisplayString>
+    <StringView>s.str,[s.len]</StringView>
   </Type>
 
   <Type Name="c4::tpl::Rope">

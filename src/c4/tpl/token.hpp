@@ -227,16 +227,16 @@ struct IfCondition
 
     typedef enum {
         _INVALID,
-        ARG,             // foo: true if arg value is not empty
-        ARG_IN_CMP,      // foo in bar
-        ARG_NOT_IN_CMP,  // foo not in bar
-        ARG_EQ_CMP,      // foo == bar
-        ARG_NE_CMP,      // foo != bar
-        ARG_GE_CMP,      // foo >= bar
-        ARG_GT_CMP,      // foo >  bar
-        ARG_LE_CMP,      // foo <= bar
-        ARG_LT_CMP,      // foo <  bar
-        ELSE,            // else- blocks, always true
+        ARG,             //!< foo: true if arg value is not empty
+        ARG_IN_CMP,      //!< foo in bar
+        ARG_NOT_IN_CMP,  //!< foo not in bar
+        ARG_EQ_CMP,      //!< foo == bar
+        ARG_NE_CMP,      //!< foo != bar
+        ARG_GE_CMP,      //!< foo >= bar
+        ARG_GT_CMP,      //!< foo >  bar
+        ARG_LE_CMP,      //!< foo <= bar
+        ARG_LT_CMP,      //!< foo <  bar
+        ELSE,            //!< else- blocks, always true
     } Type_e;
 
     csubstr  m_str;
