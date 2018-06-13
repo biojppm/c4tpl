@@ -702,7 +702,7 @@ void TokenFor::clear(Rope *rope) const
     m_block.clear(rope);
 }
 
-size_t TokenFor:: _do_render(NodeRef& root, Rope *rope, size_t start_entry, bool duplicating) const
+size_t TokenFor::_do_render(NodeRef& root, Rope *rope, size_t start_entry, bool duplicating) const
 {
     NodeRef n = get_property(root, m_val);
     if(n.valid())
@@ -755,8 +755,11 @@ void TokenFor::_set_loop_properties(NodeRef & root, NodeRef const& var, size_t i
         }
         else
         {
-            var.duplicate(root, root.last_child());
+            //var.duplicate(root, root.last_child());
+            var.duplicate_children(v, v.last_child());
         }
+        if(var.is_map()) v |= yml::MAP;
+        else if(var.is_seq()) v |= yml::SEQ;
     }
     else
     {
@@ -771,6 +774,8 @@ void TokenFor::_set_loop_properties(NodeRef & root, NodeRef const& var, size_t i
     l["revindex"] << num - i - 1; // The number of iterations from the end of the loop (0 indexed)
     l["first"] << (i == 0);       // "1" if first iteration, "0" otherwise.
     l["last"] << (i == num-1);    // "1" if last iteration, "0" otherwise.
+    l["odd"]  = (i & 1) != 0 ? "1" : "0";
+    l["even"] = (i & 1) == 0 ? "1" : "0";
 }
 
 void TokenFor::_clear_loop_properties(NodeRef & root) const
