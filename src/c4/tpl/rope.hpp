@@ -634,6 +634,11 @@ public:
     template< class CharOwningContainer >
     substr chain_all_resize(CharOwningContainer * cont) const
     {
+        if(str_size() == 0)
+        {
+            cont->resize(0);
+            return substr();
+        }
         substr buf = to_substr(*cont);
         substr ret = chain_all(buf, /*error_on_excess*/false);
         if(ret.str == nullptr)
