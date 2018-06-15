@@ -54,7 +54,7 @@ void TokenBase::mark()
     m_start.m_rope->replace(m_start.m_rope_pos.entry, marker());
 }
 
-NodeRef TokenBase::get_property(NodeRef const& root, csubstr key)
+TokenBase::PropResult TokenBase::get_property(NodeRef const& root, csubstr key, bool inside_brackets)
 {
     NodeRef n = root;
     do {
@@ -83,22 +83,32 @@ NodeRef TokenBase::get_property(NodeRef const& root, csubstr key)
                     C4_ASSERT(pos != npos);
                     csubstr subkey = key.left_of(pos);
                     key = key.right_of(pos);
-                    return get_property(n, subkey);
+                    return get_property(n, subkey, true);
                 }
             }
             else
             {
                 if(key.begins_with_any("0123456789"))
                 {
-                    size_t num;
-                    bool ret = from_str(key, &num);
-                    if(ret)
+                    if(inside_brackets) // assume it's an integer indexing into this node's children
                     {
-                        if(n.num_children() >= num)
+                        size_t num;
+                        bool ret = from_str(key, &num);
+                        if(ret)
                         {
-                            n = n[num];
-                            key.clear();
+                            if(n.num_children() >= num)
+                            {
+                                n = n[num];
+                                key.clear();
+                            }
                         }
+                    }
+                    else // it's not inside brackets, so assume it's a literal
+                    {
+                        PropResult pr;
+                        pr.val = key;
+                        pr.success = true;
+                        return pr;
                     }
                 }
                 else
@@ -110,20 +120,33 @@ NodeRef TokenBase::get_property(NodeRef const& root, csubstr key)
         }
     } while( ! key.empty() && n.valid());
 
-    return n;
+    PropResult pr;
+    pr.n = n;
+    pr.val.clear();
+    pr.success = n.valid();
+
+    return pr;
 }
 
 bool TokenBase::eval(NodeRef const& root, csubstr key, csubstr *value) const
 {
     C4_ASSERT(root.valid());
-    NodeRef n = get_property(root, key);
+    PropResult pr = get_property(root, key);
 
-    if(n.valid())
+    if(pr)
     {
-        if(n.is_map()) *value = "<<<map>>>";
-        else if(n.is_seq()) *value = "<<<seq>>>";
-        else *value = n.val();
-        return true;
+        if(pr.n.valid())
+        {
+            if(pr.n.is_map()) *value = "<<<map>>>";
+            else if(pr.n.is_seq()) *value = "<<<seq>>>";
+            else *value = pr.n.val();
+            return true;
+        }
+        else
+        {
+            *value = pr.val;
+            return true;
+        }
     }
 
     return false;
@@ -704,13 +727,14 @@ void TokenFor::clear(Rope *rope) const
 
 size_t TokenFor::_do_render(NodeRef& root, Rope *rope, size_t start_entry, bool duplicating) const
 {
-    NodeRef n = get_property(root, m_val);
-    if(n.valid())
+    PropResult pr = get_property(root, m_val);
+    if(pr)
     {
+        C4_ASSERT(pr.n.valid());
         bool first_child = true;
-        size_t num = n.num_children();
+        size_t num = pr.n.num_children();
         size_t i = 0;
-        for(auto ch : n.children())
+        for(auto ch : pr.n.children())
         {
             _set_loop_properties(root, ch, i++, num);
             if(first_child && !duplicating)

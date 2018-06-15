@@ -93,7 +93,14 @@ public:
         rope->replace(rope_entry(), {});
     }
 
-    static NodeRef get_property(NodeRef const& root, csubstr name);
+    struct PropResult
+    {
+        NodeRef n;
+        csubstr val;
+        bool success;
+        inline operator bool() const { return success; }
+    };
+    static PropResult get_property(NodeRef const& root, csubstr name, bool inside_brackets=false);
 
     bool eval(NodeRef const& root, csubstr key, csubstr *result) const;
 
