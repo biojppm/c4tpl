@@ -172,7 +172,7 @@ csubstr TokenBase::skip_nested(csubstr rem) const
             C4_ERROR_IF_NOT(level > 0, "internal error");
             --level;
         }
-        r = r.sub(result.pos + (result.which = 0 ? s.len : e.len));
+        r = r.sub(result.pos + (result.which == 0 ? s.len : e.len));
         if(level == 0)
         {
             return r;

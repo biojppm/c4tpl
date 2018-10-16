@@ -1,9 +1,10 @@
-#ifndef _C4_TPL_MGR_HPP_
-#define _C4_TPL_MGR_HPP_
+#ifndef C4_TPL_MGR_HPP_
+#define C4_TPL_MGR_HPP_
 
 #include <stddef.h>
 #include <c4/allocator.hpp>
 #include <c4/memory_util.hpp>
+#include <c4/substr.hpp>
 
 #include "c4/tpl/pool.hpp"
 
@@ -15,7 +16,7 @@ namespace tpl {
 //-----------------------------------------------------------------------------
 
 using REFIID = void const*;
-#define __uuidof(T) T::s_uuidof()
+//#define __uuidof(T) T::s_uuidof()
 
 
 #define C4_DECLARE_MANAGED_BASE(base, idx_type)                         \
@@ -288,14 +289,14 @@ public:
 
     B * get(I id) const
     {
-        B *ptr = (B*) m_pools.get(id);
+        B *ptr = reinterpret_cast<B*>(m_pools.get(id));
         return ptr;
     }
 
     template<class T>
     T * get_as(I id) const
     {
-        T *ptr = static_cast<T*>((B*) m_pools.get(id));
+        T *ptr = static_cast<T*>(reinterpret_cast<B*>(m_pools.get(id)));
         return ptr;
     }
 
@@ -354,4 +355,4 @@ public:
 } // namespace tpl
 } // namespace c4
 
-#endif /* _C4_TPL_MGR_HPP_ */
+#endif /* C4_TPL_MGR_HPP_ */
