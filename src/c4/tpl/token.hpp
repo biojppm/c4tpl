@@ -44,9 +44,9 @@ public:
 
     virtual ~TokenBase() = default;
 
-    virtual csubstr const& stoken() const = 0;
-    virtual csubstr const& etoken() const = 0;
-    virtual csubstr const& marker() const = 0;
+    virtual csubstr stoken() const = 0;
+    virtual csubstr etoken() const = 0;
+    virtual csubstr marker() const = 0;
 
 public:
 
@@ -93,7 +93,14 @@ public:
         rope->replace(rope_entry(), {});
     }
 
-    static NodeRef get_property(NodeRef const& root, csubstr name);
+    struct PropResult
+    {
+        NodeRef n;
+        csubstr val;
+        bool success;
+        inline operator bool() const { return success; }
+    };
+    static PropResult get_property(NodeRef const& root, csubstr name, bool inside_brackets=false);
 
     bool eval(NodeRef const& root, csubstr key, csubstr *result) const;
 
@@ -227,16 +234,16 @@ struct IfCondition
 
     typedef enum {
         _INVALID,
-        ARG,             // foo: true if arg value is not empty
-        ARG_IN_CMP,      // foo in bar
-        ARG_NOT_IN_CMP,  // foo not in bar
-        ARG_EQ_CMP,      // foo == bar
-        ARG_NE_CMP,      // foo != bar
-        ARG_GE_CMP,      // foo >= bar
-        ARG_GT_CMP,      // foo >  bar
-        ARG_LE_CMP,      // foo <= bar
-        ARG_LT_CMP,      // foo <  bar
-        ELSE,            // else- blocks, always true
+        ARG,             //!< foo: true if arg value is not empty
+        ARG_IN_CMP,      //!< foo in bar
+        ARG_NOT_IN_CMP,  //!< foo not in bar
+        ARG_EQ_CMP,      //!< foo == bar
+        ARG_NE_CMP,      //!< foo != bar
+        ARG_GE_CMP,      //!< foo >= bar
+        ARG_GT_CMP,      //!< foo >  bar
+        ARG_LE_CMP,      //!< foo <= bar
+        ARG_LT_CMP,      //!< foo <  bar
+        ELSE,            //!< else- blocks, always true
     } Type_e;
 
     csubstr  m_str;

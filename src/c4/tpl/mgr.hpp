@@ -1,9 +1,10 @@
-#ifndef _C4_TPL_MGR_HPP_
-#define _C4_TPL_MGR_HPP_
+#ifndef C4_TPL_MGR_HPP_
+#define C4_TPL_MGR_HPP_
 
 #include <stddef.h>
 #include <c4/allocator.hpp>
 #include <c4/memory_util.hpp>
+#include <c4/substr.hpp>
 
 #include "c4/tpl/pool.hpp"
 
@@ -14,62 +15,84 @@ namespace tpl {
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#define C4_DECLARE_MANAGED_BASE(base, idx)                          \
-public:                                                             \
-                                                                    \
-    idx _m_id;                                                      \
-    static idx _s_type_id;                                          \
-                                                                    \
-public:                                                             \
-                                                                    \
-    inline void _set_id(idx id_) { _m_id = id_; }                   \
-    C4_ALWAYS_INLINE idx id() const { return _m_id; }               \
-    virtual idx type_id() const { return _s_type_id; }              \
-    virtual const char* type_name() const { return #base; }         \
-                                                                    \
-private:                                                            \
-
-#define C4_DEFINE_MANAGED_BASE(base, idx) \
-idx base::_s_type_id = (idx)-1
+using REFIID = void const*;
+//#define __uuidof(T) T::s_uuidof()
 
 
-#define C4_DECLARE_MANAGED(cls, base, idx)                          \
-public:                                                             \
-                                                                    \
-    using base_type = base;                                         \
-                                                                    \
-    static idx _s_type_id;                                          \
-    static idx _s_set_type_id(idx id)                               \
-    {                                                               \
-        C4_ASSERT_MSG(_s_type_id == (idx)-1 || _s_type_id == id, "type id was already set to a different value"); \
-        _s_type_id = id;                                            \
-        return _s_type_id;                                          \
-    }                                                               \
-                                                                    \
-    static cls* _s_create(void *mem)                                \
-    {                                                               \
-        return new (mem) cls();                                     \
-    }                                                               \
-    static base* _s_create_base(void *mem)                          \
-    {                                                               \
-        return new (mem) cls();                                     \
-    }                                                               \
-    static void _s_destroy(void *mem)                               \
-    {                                                               \
-        cls *ptr = (cls*)mem;                                       \
-        ptr->~cls();                                                \
-    }                                                               \
-                                                                    \
-    virtual idx type_id() const override { return _s_type_id; }     \
-    static inline idx s_type_id() { return _s_type_id; }            \
-    virtual const char* type_name() const override { return #cls; } \
-    static inline const char* s_type_name() { return #cls; }        \
-                                                                    \
-private:                                                            \
+#define C4_DECLARE_MANAGED_BASE(base, idx_type)                         \
+public:                                                                 \
+                                                                        \
+    idx_type _m_id;                                                     \
+    static idx_type _s_type_id;                                         \
+    static const char _s_##base##_id;                                   \
+                                                                        \
+public:                                                                 \
+                                                                        \
+    inline void _set_id(idx_type id_) { _m_id = id_; }                  \
+    C4_ALWAYS_INLINE idx_type id() const { return _m_id; }              \
+    virtual idx_type type_id() const { return _s_type_id; }             \
+    virtual const char* type_name() const { return #base; }             \
+                                                                        \
+    static REFIID s_uuidof() { return static_cast<REFIID>(&_s_##base##_id); } \
+    virtual REFIID uuidof() const { return static_cast<REFIID>(&_s_##base##_id); } \
+                                                                        \
+private:
 
 
-#define C4_DEFINE_MANAGED(cls, idx) \
-idx cls::_s_type_id = (idx)-1
+#define C4_DEFINE_MANAGED_BASE(base, idx_type) \
+    idx_type base::_s_type_id = (idx_type)-1;  \
+    const char base::_s_##base##_id = '\0'
+
+
+#define C4_DECLARE_MANAGED(cls, base, idx_type)                         \
+public:                                                                 \
+                                                                        \
+    using base_type = base;                                             \
+                                                                        \
+public:                                                                 \
+                                                                        \
+    static idx_type _s_type_id;                                         \
+    static const char _s_##cls##_id;                                    \
+                                                                        \
+public:                                                                 \
+                                                                        \
+    static idx_type _s_set_type_id(idx_type id)                         \
+    {                                                                   \
+        C4_ASSERT_MSG(_s_type_id == (idx_type)-1 || _s_type_id == id, "type id was already set to a different value"); \
+        _s_type_id = id;                                                \
+        return _s_type_id;                                              \
+    }                                                                   \
+                                                                        \
+    static cls* _s_create(void *mem)                                    \
+    {                                                                   \
+        return new (mem) cls();                                         \
+    }                                                                   \
+    static base* _s_create_base(void *mem)                              \
+    {                                                                   \
+        return new (mem) cls();                                         \
+    }                                                                   \
+    static void _s_destroy(void *mem)                                   \
+    {                                                                   \
+        cls *ptr = (cls*)mem;                                           \
+        ptr->~cls();                                                    \
+    }                                                                   \
+                                                                        \
+public:                                                                 \
+                                                                        \
+    virtual idx_type type_id() const override { return _s_type_id; }    \
+    static inline idx_type s_type_id() { return _s_type_id; }           \
+    virtual const char* type_name() const override { return #cls; }     \
+    static inline const char* s_type_name() { return #cls; }            \
+                                                                        \
+    static REFIID s_uuidof() { return static_cast<REFIID>(&_s_##cls##_id); } \
+    virtual REFIID uuidof() const override { return static_cast<REFIID>(&_s_##cls##_id); } \
+                                                                        \
+private:
+
+
+#define C4_DEFINE_MANAGED(cls, idx_type)        \
+    idx_type cls::_s_type_id = (idx_type)-1;    \
+    const char cls::_s_##cls##_id = '\0'
 
 
 #define C4_REGISTER_MANAGED(mgr, cls) \
@@ -80,12 +103,12 @@ idx cls::_s_type_id = (idx)-1
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-template< class B, class Pool >
+template<class B, class Pool>
 struct ObjPool : public Pool
 {
+    using I = typename Pool::index_type;
     using pfn_create = B* (*)(void *mem);
     using pfn_destroy = void (*)(void *mem);
-    using I = typename Pool::index_type;
 
     using Pool::Pool;
 
@@ -100,11 +123,11 @@ struct ObjPool : public Pool
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 /** A manager of objects with a common base type. */
-template< class B, class Pool, size_t NumPoolsMax >
+template<class B, class Pool, size_t NumPoolsMax>
 struct ObjMgr
 {
     using pool_type = ObjPool<B, Pool>;
-    using pool_collection_type = pool_collection< ObjPool<B, Pool>, NumPoolsMax >;
+    using pool_collection_type = pool_collection<ObjPool<B, Pool>, NumPoolsMax>;
     using I = typename pool_type::I;
 
     struct name_id
@@ -115,7 +138,7 @@ struct ObjMgr
 
 public:
 
-    pool_collection< ObjPool<B, Pool>, NumPoolsMax > m_pools;
+    pool_collection<ObjPool<B, Pool>, NumPoolsMax> m_pools;
     I m_size;
 
     name_id m_type_ids; ///< @todo
@@ -158,10 +181,10 @@ public:
 
 public:
 
-    template< class T >
+    template<class T>
     I register_type(I size=sizeof(T), I align=alignof(T))
     {
-        static_assert(std::is_base_of< B, T >::value, "B must be base of T");
+        static_assert(std::is_base_of<B, T>::value, "B must be base of T");
         I type_id = m_pools.add_pool(size, align, 0);
         T::_s_set_type_id(type_id);
         pool_type *p = m_pools.get_pool(type_id);
@@ -184,14 +207,14 @@ public:
         return m_pools.get_pool(pool_id);
     }
 
-    template< class T >
+    template<class T>
     pool_type * get_pool()
     {
         I type_id = T::s_type_id();
         return m_pools.get_pool(type_id);
     }
 
-    template< class T >
+    template<class T>
     pool_type const* get_pool() const
     {
         I type_id = T::s_type_id();
@@ -224,13 +247,13 @@ public:
 
 public:
 
-    template< class T, class... CtorArgs >
+    template<class T, class... CtorArgs>
     T * create_from_pool_as(CtorArgs&& ...args)
     {
         I type_id = T::s_type_id();
         I id = m_pools.claim(type_id);
         pool_type *p = get_pool(type_id);
-        T* tptr = new (m_pools.get(id)) T(std::forward< CtorArgs >(args)...);
+        T* tptr = new (m_pools.get(id)) T(std::forward<CtorArgs>(args)...);
         tptr->_set_id(id);
         ++m_size;
         return tptr;
@@ -266,21 +289,21 @@ public:
 
     B * get(I id) const
     {
-        B *ptr = (B*) m_pools.get(id);
+        B *ptr = reinterpret_cast<B*>(m_pools.get(id));
         return ptr;
     }
 
-    template< class T >
+    template<class T>
     T * get_as(I id) const
     {
-        T *ptr = static_cast< T* >((B*) m_pools.get(id));
+        T *ptr = static_cast<T*>(reinterpret_cast<B*>(m_pools.get(id)));
         return ptr;
     }
 
 public:
 
-    using iterator = pool_iterator_impl< pool_type, B >;
-    using const_iterator = pool_iterator_impl< const pool_type, const B >;
+    using       iterator = pool_iterator_impl<      pool_type,       B>;
+    using const_iterator = pool_iterator_impl<const pool_type, const B>;
 
     iterator begin()
     {
@@ -332,4 +355,4 @@ public:
 } // namespace tpl
 } // namespace c4
 
-#endif /* _C4_TPL_MGR_HPP_ */
+#endif /* C4_TPL_MGR_HPP_ */

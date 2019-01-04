@@ -29,7 +29,7 @@ public:
         size_t m_next;
     };
 
-    //! an indexer into a rope
+    /// an indexer into a rope
     struct rope_pos
     {
         size_t entry;
@@ -46,22 +46,30 @@ public:
 
 public:
 
-    rope_entry  * m_buf;
-    size_t        m_cap;
-
-    size_t        m_size;
-    size_t        m_head;
-    size_t        m_tail;
-    size_t        m_free_head;
-    size_t        m_free_tail;
-
-    size_t        m_str_size;
-
-    allocator_mr<char> m_alloc;
+    rope_entry  * m_buf;        ///< entry buffer
+    size_t        m_cap;        ///< capacity of the entry buffer
+    size_t        m_size;       ///< current number of entries
+    size_t        m_head;       ///< current head of the entry list
+    size_t        m_tail;       ///< current tail of the entry list
+    size_t        m_free_head;  ///< current head of the entry free list
+    size_t        m_free_tail;  ///< current tail of the entry free list
+    size_t        m_str_size;   ///< the current size of the concatenated string
+    allocator_mr<char> m_alloc; ///< a polymorphic allocator
 
 public:
 
-    Rope(allocator_mr<char> const& a={}) { memset(this, 0, sizeof(*this)); m_head = m_tail = m_free_head = m_free_tail = NONE; m_alloc = a; }
+    Rope(allocator_mr<char> const& a={})
+        : m_buf(nullptr),
+          m_cap(0),
+          m_size(0),
+          m_head(NONE),
+          m_tail(NONE),
+          m_free_head(NONE),
+          m_free_tail(NONE),
+          m_str_size(0),
+          m_alloc(a)
+    {
+    }
     Rope(size_t cap, allocator_mr<char> const& a={}) : Rope(a) { reserve(cap); }
 
     ~Rope() { _free(); }
@@ -78,7 +86,7 @@ private:
     {
         if(m_buf)
         {
-          m_alloc.deallocate((char*)m_buf, sizeof(rope_entry) * m_cap);
+            m_alloc.deallocate((char*)m_buf, sizeof(rope_entry) * m_cap);
             m_buf = nullptr;
         }
     }
@@ -234,6 +242,17 @@ private:
 
 public:
 
+    /// insert an empty entry before the given one
+    /// @return the index of the inserted entry
+    size_t insert_before(size_t next)
+    {
+        C4_ASSERT(next != NONE);
+        size_t i = insert_after(_p(next).m_prev);
+        return i;
+    }
+
+    /// insert an entry before the given one
+    /// @return the index of the inserted entry
     size_t insert_before(size_t next, csubstr s)
     {
         C4_ASSERT(next != NONE);
@@ -243,21 +262,18 @@ public:
         return i;
     }
 
-    size_t insert_before(size_t next)
+    /// insert all the entries from a rope before the given entry index
+    /// @return the index of the last inserted entry
+    size_t insert_before(size_t next, Rope const& that)
     {
         C4_ASSERT(next != NONE);
-        size_t i = insert_after(_p(next).m_prev);
-        return i;
+        return insert_after(_p(next).m_prev, that);
     }
 
-    size_t insert_after(size_t prev, csubstr s)
-    {
-        size_t i = insert_after(prev);
-        _p(i).s = s;
-        m_str_size += s.len;
-        return i;
-    }
+public:
 
+    /// insert an empty entry after the given one
+    /// @return the index of the inserted entry
     size_t insert_after(size_t prev)
     {
         size_t i = _claim();
@@ -287,11 +303,37 @@ public:
         return i;
     }
 
-    size_t prepend(csubstr s) { return insert_after(NONE, s); }
-    size_t prepend() { return insert_after(NONE); }
+    /// insert an entry after the given one
+    /// @return the index of the inserted entry
+    size_t insert_after(size_t prev, csubstr s)
+    {
+        size_t i = insert_after(prev);
+        _p(i).s = s;
+        m_str_size += s.len;
+        return i;
+    }
 
-    size_t append(csubstr s) { return insert_after(m_tail, s); }
+    /// insert all the entries from a rope after the given entry index
+    /// @return the index of the last inserted entry
+    size_t insert_after(size_t prev, Rope const& that)
+    {
+        size_t after = prev;
+        for(auto ss : that.entries())
+        {
+            after = insert_after(after, ss);
+        }
+        return after;
+    }
+
+public:
+
+    size_t prepend() { return insert_after(NONE); }
+    size_t prepend(csubstr s) { return insert_after(NONE, s); }
+    size_t prepend(Rope const& r) { return insert_after(NONE, r); }
+
     size_t append() { return insert_after(m_tail); }
+    size_t append(csubstr s) { return insert_after(m_tail, s); }
+    size_t append(Rope const& r) { return insert_after(m_tail, r); }
 
 public:
 
@@ -594,6 +636,11 @@ public:
     template< class CharOwningContainer >
     substr chain_all_resize(CharOwningContainer * cont) const
     {
+        if(str_size() == 0)
+        {
+            cont->resize(0);
+            return substr();
+        }
         substr buf = to_substr(*cont);
         substr ret = chain_all(buf, /*error_on_excess*/false);
         if(ret.str == nullptr)

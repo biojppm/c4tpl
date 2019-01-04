@@ -17,6 +17,7 @@ public:
 
     Engine() : m_src(), m_tokens() {}
 
+    bool empty() const { return m_tokens.empty() || m_src.empty(); }
     void clear()
     {
         m_tokens.clear();
@@ -57,7 +58,7 @@ public:
         {
             C4_ASSERT(m_tokens.size() == m_tokens.m_token_seq.size());
             Rope const* parsed_rope = m_tokens.get(m_tokens.m_token_seq[0])->rope();
-            if(rope->num_entries() != parsed_rope->num_entries())
+            if(rope != parsed_rope)
             {
                 *rope = *parsed_rope;
             }

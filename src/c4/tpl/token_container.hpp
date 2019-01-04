@@ -37,38 +37,39 @@ void register_known_tokens(TokenContainer &c);
 
 /** allow user-registered tokens */
 #define C4TPL_DECLARE_TOKEN(cls, stok, etok, mrk)                       \
-\
-    C4_DECLARE_MANAGED(cls, TokenBase, size_t);\
-\
-public:\
                                                                         \
-    inline virtual csubstr const& stoken() const override { return s_stoken(); } \
-    inline virtual csubstr const& etoken() const override { return s_etoken(); } \
-    inline virtual csubstr const& marker() const override { return s_marker(); } \
-    inline static csubstr const& s_stoken() { static const csubstr s(stok); return s; } \
-    inline static csubstr const& s_etoken() { static const csubstr s(etok); return s; } \
-    inline static csubstr const& s_marker() { static const csubstr s(mrk); return s; } \
+    C4_DECLARE_MANAGED(cls, TokenBase, size_t);                         \
+                                                                        \
+public:                                                                 \
+                                                                        \
+    /** start token */                                                  \
+    inline virtual csubstr stoken() const override { return s_stoken(); } \
+    /** end token */                                                    \
+    inline virtual csubstr etoken() const override { return s_etoken(); } \
+    inline virtual csubstr marker() const override { return s_marker(); } \
+    inline static  csubstr s_stoken() { static const csubstr s(stok); return s; } \
+    inline static  csubstr s_etoken() { static const csubstr s(etok); return s; } \
+    inline static  csubstr s_marker() { static const csubstr s(mrk); return s; }
 
 #define C4TPL_REGISTER_TOKEN(mgr, cls) mgr.register_token_type<cls>()
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-using TokenPoolType = pool_linear_paged<256, size_t, allocator_mr<char> >;
+using TokenPoolType = pool_linear_paged<256, size_t, allocator_mr<char>>;
 constexpr const size_t TokenTypesMax = 32;
 
-class TokenContainer : public ObjMgr< TokenBase, TokenPoolType, TokenTypesMax >
+class TokenContainer : public ObjMgr<TokenBase, TokenPoolType, TokenTypesMax>
 {
-    using base_type = ObjMgr< TokenBase, TokenPoolType, TokenTypesMax >;
+    using base_type = ObjMgr<TokenBase, TokenPoolType, TokenTypesMax>;
     using pool_type = typename base_type::pool_type;
 
 public:
 
-    std::vector< csubstr >    m_token_starts;
-    std::vector< size_t >     m_token_seq;
+    std::vector<csubstr>    m_token_starts;
+    std::vector<size_t>     m_token_seq;
 
     using ObjMgr::ObjMgr;
-
     ~TokenContainer();
 
     template< class T >
