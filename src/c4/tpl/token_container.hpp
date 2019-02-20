@@ -37,10 +37,10 @@ void register_known_tokens(TokenContainer &c);
 
 /** allow user-registered tokens */
 #define C4TPL_DECLARE_TOKEN(cls, stok, etok, mrk)                       \
-\
-    C4_DECLARE_MANAGED(cls, TokenBase, size_t);\
-\
-public:\
+                                                                        \
+    C4_DECLARE_MANAGED(cls, TokenBase, size_t);                         \
+                                                                        \
+public:                                                                 \
                                                                         \
     /** start token */                                                  \
     inline virtual csubstr stoken() const override { return s_stoken(); } \
@@ -49,7 +49,7 @@ public:\
     inline virtual csubstr marker() const override { return s_marker(); } \
     inline static  csubstr s_stoken() { static const csubstr s(stok); return s; } \
     inline static  csubstr s_etoken() { static const csubstr s(etok); return s; } \
-    inline static  csubstr s_marker() { static const csubstr s(mrk); return s; } \
+    inline static  csubstr s_marker() { static const csubstr s(mrk); return s; }
 
 #define C4TPL_REGISTER_TOKEN(mgr, cls) mgr.register_token_type<cls>()
 
@@ -70,6 +70,7 @@ public:
     std::vector<size_t>     m_token_seq;
 
     using ObjMgr::ObjMgr;
+    ~TokenContainer();
 
     template< class T >
     void register_token_type()

@@ -371,12 +371,14 @@ public:
         return entry;
     }
 
+    /** erase a portion of entry, starting at pos, num characters long */
     void erase(size_t entry, size_t pos, size_t num)
     {
         if(num == 0) return;
         _do_erase(entry, pos, num);
     }
 
+    /** fully erase an entry */
     void erase(size_t entry)
     {
         _release(entry);
