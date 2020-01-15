@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.2)
 project(c4tpl)
 
-include(./extern/c4core/cmake/c4Project.cmake)
+include(./ext/c4core/cmake/c4Project.cmake)
 c4_declare_project(c4tpl)
 
 set(C4TPL_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-set(C4TPL_EXT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern)
+set(C4TPL_EXT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extx)
 
 set(src
     c4/tpl/c4tpl.natvis
