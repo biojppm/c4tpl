@@ -26,8 +26,12 @@ c4_require_subproject(rapidyaml SUBDIRECTORY ${C4TPL_EXT_DIR}/rapidyaml)
 c4_add_library(c4tpl
     SOURCES ${src} SOURCE_ROOT ${C4TPL_SRC_DIR}
     LIBS ryml c4core
-    INC_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
+    INC_DIRS
+       $<BUILD_INTERFACE:${C4TPL_SRC_DIR}> $<INSTALL_INTERFACE:include>
 )
+
+c4_install_target(c4tpl)
+c4_install_exports()
 
 if(C4TPL_BUILD_TESTS)
     enable_testing() # this must be done here (and not inside the test dir)

@@ -93,7 +93,7 @@ TokenBase::PropResult TokenBase::get_property(NodeRef const& root, csubstr key, 
                     if(inside_brackets) // assume it's an integer indexing into this node's children
                     {
                         size_t num;
-                        bool ret = from_str(key, &num);
+                        bool ret = from_chars(key, &num);
                         if(ret)
                         {
                             if(n.num_children() >= num)
@@ -798,8 +798,8 @@ void TokenFor::_set_loop_properties(NodeRef & root, NodeRef const& var, size_t i
     l["revindex"] << num - i - 1; // The number of iterations from the end of the loop (0 indexed)
     l["first"] << (i == 0);       // "1" if first iteration, "0" otherwise.
     l["last"] << (i == num-1);    // "1" if last iteration, "0" otherwise.
-    l["odd"]  = (i & 1) != 0 ? "1" : "0";
-    l["even"] = (i & 1) == 0 ? "1" : "0";
+    l["odd"] = to_csubstr((i & 1) != 0 ? "1" : "0");
+    l["even"] = to_csubstr((i & 1) == 0 ? "1" : "0");
 }
 
 void TokenFor::_clear_loop_properties(NodeRef & root) const
