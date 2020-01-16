@@ -1,12 +1,12 @@
-c4_setup_testing(C4TPL ON)
+c4_setup_testing()
 
 function(c4tpl_add_test name)
-    c4_add_executable(C4TPL c4tpl-test-${name}
+    c4_add_executable(c4tpl-test-${name}
         SOURCES ${ARGN} main.cpp
         INC_DIRS ${CMAKE_CURRENT_LIST_DIR}
         LIBS c4tpl gtest
         FOLDER c4tpl-test)
-    c4_add_test(C4TPL c4tpl-test-${name} ON)
+    c4_add_test(c4tpl-test-${name})
 endfunction(c4tpl_add_test)
 
 c4tpl_add_test(rope test_rope.cpp)

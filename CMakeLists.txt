@@ -5,7 +5,7 @@ include(./ext/c4core/cmake/c4Project.cmake)
 c4_declare_project(c4tpl)
 
 set(C4TPL_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-set(C4TPL_EXT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extx)
+set(C4TPL_EXT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext)
 
 set(src
     c4/tpl/c4tpl.natvis
@@ -21,7 +21,7 @@ set(src
 )
 
 c4_require_subproject(c4core SUBDIRECTORY ${C4TPL_EXT_DIR}/c4core)
-c4_require_subproject(rapidyaml SUBDIRECTORY ${C4TPL_EXT_DIR}/rapidyaml)
+c4_require_subproject(ryml   SUBDIRECTORY ${C4TPL_EXT_DIR}/rapidyaml)
 
 c4_add_library(c4tpl
     SOURCES ${src} SOURCE_ROOT ${C4TPL_SRC_DIR}
