@@ -28,6 +28,9 @@ public:
         size_t m_prev;
         size_t m_next;
     };
+    // we'll use memset and memcpy with this type
+    static_assert(std::is_trivially_copyable<rope_entry>::value, "must be trivially copyable");
+    static_assert(std::is_trivially_destructible<rope_entry>::value, "must be trivially copyable");
 
     /// an indexer into a rope
     struct rope_pos
@@ -94,16 +97,28 @@ private:
     void _copy(Rope const& that)
     {
         C4_ASSERT(m_buf == nullptr);
-        memcpy(this, &that, sizeof(*this));
-        m_buf = (rope_entry*) m_alloc.allocate(m_cap * sizeof(rope_entry));//, /*hint*/that.m_buf);
-        memcpy(m_buf, that.m_buf, m_cap * sizeof(rope_entry));
+        m_buf = (rope_entry*) m_alloc.allocate(that.m_cap * sizeof(rope_entry));//, /*hint*/that.m_buf);
+        memcpy(m_buf, that.m_buf, that.m_cap * sizeof(rope_entry));
+        _copy_members(that);
     }
 
     void _move(Rope *that)
     {
-        memcpy(this, &that, sizeof(*this));
         m_buf = that->m_buf;
         that->m_buf = nullptr;
+        _copy_members(*that);
+    }
+
+    void _copy_members(Rope const& that)
+    {
+        m_cap       = that.m_cap;
+        m_size      = that.m_size;
+        m_head      = that.m_head;
+        m_tail      = that.m_tail;
+        m_free_head = that.m_free_head;
+        m_free_tail = that.m_free_tail;
+        m_str_size  = that.m_str_size;
+        m_alloc     = that.m_alloc;
     }
 
 public:
@@ -176,7 +191,14 @@ private:
     {
         if(num == 0) return; // prevent overflow when subtracting
         C4_ASSERT(first >= 0 && first + num <= m_cap);
-        memset(m_buf + first, 0, num * sizeof(rope_entry));
+        #ifdef __GNUC__
+        #pragma GCC diagnostic push
+        //#pragma GCC diagnostic ignored "-Wclass-memaccess" WTF?
+        memset((void*)(m_buf + first), 0, num * sizeof(rope_entry));
+        #pragma GCC diagnostic pop
+        #else
+        memset((m_buf + first), 0, num * sizeof(rope_entry));
+        #endif
         for(size_t i = first, e = first + num; i < e; ++i)
         {
             _clear(i);
