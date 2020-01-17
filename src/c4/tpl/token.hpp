@@ -124,7 +124,7 @@ class TokenExpression : public TokenBase
 {
 public:
 
-    C4TPL_DECLARE_TOKEN(TokenExpression, "{{", "}}", "<<<expr>>>");
+    C4TPL_DECLARE_TOKEN(TokenExpression, "{{", "}}", "<<<expr>>>")
 
 public:
 
@@ -168,7 +168,7 @@ public:
 /*
 class TokenFilter : public TokenBase
 {
-    C4_DECLARE_TOKEN(TokenFilter, "|", " ", "<<<filter>>>");
+    C4_DECLARE_TOKEN(TokenFilter, "|", " ", "<<<filter>>>")
 
     TemplateBlock* get_block(size_t bid) override { C4_ERROR("never call"); return nullptr; }
 
@@ -204,7 +204,7 @@ struct TemplateBlock
 
     csubstr body;
     TplLocation start;
-    std::vector< subpart > parts;
+    std::vector<subpart> parts;
     TokenContainer *tokens; // to get the tokens from their ids
     size_t owner_id, block_id; // major smell - rewrite TokenContainer to avoid relocations
 
@@ -251,7 +251,7 @@ struct IfCondition
     csubstr  m_argval;
     csubstr  m_cmp;
     csubstr  m_cmpval;
-    Type_e m_ctype;
+    Type_e   m_ctype;
 
     void init_as_else()
     {
@@ -269,7 +269,7 @@ struct IfCondition
     bool resolve(TokenIf const* tk, NodeRef & root);
 
     void parse();
- 
+
 private:
 
     void _eval(TokenIf const* tk, NodeRef & root);
@@ -283,7 +283,7 @@ class TokenIf : public TokenBase
 {
 public:
 
-    C4TPL_DECLARE_TOKEN(TokenIf, "{% if ", "{% endif %}", "<<<if>>>");
+    C4TPL_DECLARE_TOKEN(TokenIf, "{% if ", "{% endif %}", "<<<if>>>")
 
     void parse(csubstr *rem, TplLocation *curr_pos) override;
 
@@ -308,7 +308,7 @@ public:
         mutable IfCondition condition;
     };
 
-    mutable std::vector< condblock > m_blocks;
+    mutable std::vector<condblock> m_blocks;
 
     condblock* _add_block(csubstr cond, csubstr s, bool as_else=false);
 };
@@ -321,7 +321,7 @@ class TokenFor : public TokenBase
 {
 public:
 
-    C4TPL_DECLARE_TOKEN(TokenFor, "{% for ", "{% endfor %}", "<<<for>>>");
+    C4TPL_DECLARE_TOKEN(TokenFor, "{% for ", "{% endfor %}", "<<<for>>>")
 
     void parse(csubstr *rem, TplLocation *curr_pos) override;
 

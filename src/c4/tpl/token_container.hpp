@@ -38,7 +38,7 @@ void register_known_tokens(TokenContainer &c);
 /** allow user-registered tokens */
 #define C4TPL_DECLARE_TOKEN(cls, stok, etok, mrk)                       \
                                                                         \
-    C4_DECLARE_MANAGED(cls, TokenBase, size_t);                         \
+    C4_DECLARE_MANAGED(cls, TokenBase, size_t)                          \
                                                                         \
 public:                                                                 \
                                                                         \
