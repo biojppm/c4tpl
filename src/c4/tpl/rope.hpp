@@ -552,7 +552,7 @@ public:
 
 private:
 
-    template< class It >
+    template<class It>
     struct container_impl
     {
         It b, e;
@@ -565,7 +565,7 @@ private:
         iterator end() const { return e; }
     };
 
-    template< class RopeC, class RopeE >
+    template<class RopeC, class RopeE>
     struct entry_iterator_impl
     {
         RopeC *m_rope;
@@ -587,25 +587,25 @@ private:
 
 public:
 
-    using       iterator = entry_iterator_impl<       Rope,       rope_entry >;
-    using const_iterator = entry_iterator_impl< const Rope, const rope_entry >;
+    using       iterator = entry_iterator_impl<      Rope,       rope_entry>;
+    using const_iterator = entry_iterator_impl<const Rope, const rope_entry>;
 
           iterator begin()       { return       iterator(this, m_head); }
           iterator   end()       { return       iterator(this, NONE); }
     const_iterator begin() const { return const_iterator(this, m_head); }
     const_iterator   end() const { return const_iterator(this, NONE); }
 
-    container_impl<       iterator > entries()       { return container_impl<       iterator >(begin(), end()); }
-    container_impl< const_iterator > entries() const { return container_impl< const_iterator >(begin(), end()); }
+    container_impl<      iterator> entries()       { return container_impl<      iterator>(begin(), end()); }
+    container_impl<const_iterator> entries() const { return container_impl<const_iterator>(begin(), end()); }
 
 private:
 
-    template< class RopeC >
+    template<class RopeC>
     struct token_iterator_impl
     {
         RopeC *   m_rope;
         rope_pos  m_pos;
-        csubstr     m_token;
+        csubstr   m_token;
 
         using value_type = rope_pos;
 
@@ -623,11 +623,11 @@ private:
 
 public:
 
-    using       token_iterator = token_iterator_impl<       Rope >;
-    using const_token_iterator = token_iterator_impl< const Rope >;
+    using       token_iterator = token_iterator_impl<      Rope>;
+    using const_token_iterator = token_iterator_impl<const Rope>;
 
-    container_impl<       token_iterator > tokens(csubstr token)       { return container_impl<       token_iterator >({this, lookup_token(token), token}, {this, {NONE, npos}, token}); }
-    container_impl< const_token_iterator > tokens(csubstr token) const { return container_impl< const_token_iterator >({this, lookup_token(token), token}, {this, {NONE, npos}, token}); }
+    container_impl<      token_iterator> tokens(csubstr token)       { return container_impl<       token_iterator >({this, lookup_token(token), token}, {this, {NONE, npos}, token}); }
+    container_impl<const_token_iterator> tokens(csubstr token) const { return container_impl< const_token_iterator >({this, lookup_token(token), token}, {this, {NONE, npos}, token}); }
 
 public:
 
@@ -655,7 +655,7 @@ public:
         return ret;
     }
 
-    template< class CharOwningContainer >
+    template<class CharOwningContainer>
     substr chain_all_resize(CharOwningContainer * cont) const
     {
         if(str_size() == 0)
@@ -686,7 +686,7 @@ public:
 };
 
 
-template< class OStream >
+template<class OStream>
 inline OStream& operator << (OStream &s, Rope const& r)
 {
     for(auto const& sp : r)

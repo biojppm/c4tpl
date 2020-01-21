@@ -298,7 +298,7 @@ public:
         {
             void *obj = get(id);
             C4_ASSERT(obj != nullptr);
-            fn(get(id));
+            fn(obj);
         }
         m_num_objs = 0;
     }
@@ -359,7 +359,7 @@ struct _pool_collection_crtp
 
     void release(I id, I n=1)
     {
-        C4_ASSERT(n>= 1);
+        C4_ASSERT(n >= 1);
         I pool = decode_pool(id);
         I pos = decode_pos(id);
         Pool *p = _c4cthis->get_pool(pool);

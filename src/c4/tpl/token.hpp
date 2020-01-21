@@ -273,7 +273,7 @@ struct IfCondition
 private:
 
     void _eval(TokenIf const* tk, NodeRef & root);
-   };
+};
 
 
 //-----------------------------------------------------------------------------
