@@ -6,7 +6,7 @@ namespace c4 {
 using plin = pool_linear<size_t, Allocator<char,MemRes>>;
 using ppag = pool_linear_paged<256, size_t, Allocator<char,MemRes>>;
 
-template< class PoolLinear >
+template<class PoolLinear>
 void test_pool_linear_instantiation()
 {
     PoolLinear p;
@@ -15,7 +15,7 @@ void test_pool_linear_instantiation()
     EXPECT_EQ(p.capacity(), 0);
 }
 
-template< class PoolLinearPaged >
+template<class PoolLinearPaged>
 void test_pool_linear_paged_instantiation()
 {
     PoolLinearPaged p;
@@ -35,11 +35,13 @@ TEST(pool_linear_paged, basic)
 }
 
 
-template< class PoolLinearPaged >
+//-----------------------------------------------------------------------------
+
+template<class PoolLinearPaged>
 void do_test_paged_indices(size_t pg, size_t pos, size_t id)
 {
-    EXPECT_EQ(PoolLinearPaged::_page(id), pg) << "pg=" << pg << "  pos=" << pos << "  id=" << id;
-    EXPECT_EQ(PoolLinearPaged::_pos(id), pos) << "pg=" << pg << "  pos=" << pos << "  id=" << id;
+    EXPECT_EQ(PoolLinearPaged::_page(id), pg)    << "pg=" << pg << "  pos=" << pos << "  id=" << id;
+    EXPECT_EQ(PoolLinearPaged::_pos(id), pos)    << "pg=" << pg << "  pos=" << pos << "  id=" << id;
     EXPECT_EQ(PoolLinearPaged::_id(pg, pos), id) << "pg=" << pg << "  pos=" << pos << "  id=" << id;
 }
 
@@ -57,22 +59,22 @@ TEST(pool_linear_paged, indices)
 }
 
 
-template< class PoolCollection >
+template<class PoolCollection>
 void do_test_pool_collection_indices(PoolCollection &p, size_t pool, size_t pos)
 {
     size_t id = p.encode_id(pool, pos);
     EXPECT_EQ(p.decode_pool(id), pool) << "pool=" << pool << "  pos=" << pos << "  id=" << id;
-    EXPECT_EQ(p.decode_pos(id), pos) << "pool=" << pool << "  pos=" << pos << "  id=" << id;
+    EXPECT_EQ(p.decode_pos(id), pos)   << "pool=" << pool << "  pos=" << pos << "  id=" << id;
 
     size_t pool2 = p.decode_pool(id);
     size_t pos2 = p.decode_pos(id);
     EXPECT_EQ(p.encode_id(pool2, pos2), id) << "pool=" << pool << "  pos=" << pos << "  id=" << id;
 }
 
-template< class Pool >
+template<class Pool>
 void test_pool_collection_indices()
 {
-    using pcol = pool_collection< Pool, 16 >;
+    using pcol = pool_collection<Pool, 16>;
     pcol p;
 
     size_t id = 0;
@@ -86,15 +88,16 @@ void test_pool_collection_indices()
     }
 }
 
+
 TEST(pool_linear, collection_indices)
 {
-    test_pool_collection_indices< plin >();
+    test_pool_collection_indices<plin>();
 }
 
 
 TEST(pool_linear_paged, collection_indices)
 {
-    test_pool_collection_indices< ppag >();
+    test_pool_collection_indices<ppag>();
 }
 
 

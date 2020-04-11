@@ -26,7 +26,7 @@ public:
     I     m_obj_align;  ///< the alignment of the objects
     I     m_num_objs;   ///< the current number of objects
 
-    /** first: the capacity, expressed in number of objects
+    /** first: the capacity, expressed in number of objects (not bytes!)
      * second: the allocator */
     tight_pair<I, Allocator> m_capacity_allocator;
 
@@ -515,7 +515,8 @@ public:
 
 //-----------------------------------------------------------------------------
 
-/** pool collection with a run time-determined number of pools, allocated from the heap */
+/** pool collection with a runtime-determined number of pools, allocated from
+ * the heap */
 template<class Pool>
 struct pool_collection<Pool, 0>
     :
@@ -527,6 +528,7 @@ struct pool_collection<Pool, 0>
     I m_num_pools;
     I m_capacity;
 
+    // TODO, WIP
 };
 
 

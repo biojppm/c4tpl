@@ -161,15 +161,15 @@ csubstr TokenBase::skip_nested(csubstr rem) const
     while( ! r.empty())
     {
         auto result = r.first_of_any(s, e);
-        C4_ERROR_IF_NOT(result, "invalid nested sequence");
-        C4_ERROR_IF_NOT(result.which == 0 || result.which == 1, "internal error");
+        C4_CHECK_MSG(result, "invalid nested sequence");
+        C4_CHECK_MSG(result.which == 0 || result.which == 1, "internal error");
         if(result.which == 0)
         {
             ++level;
         }
         else
         {
-            C4_ERROR_IF_NOT(level > 0, "internal error");
+            C4_CHECK_MSG(level > 0, "internal error");
             --level;
         }
         r = r.sub(result.pos + (result.which == 0 ? s.len : e.len));
@@ -477,7 +477,7 @@ void TokenIf::parse(csubstr *rem, TplLocation *curr_pos)
     while( ! s.empty())
     {
         auto result = s.first_of_any("{% endif %}", "{% else %}", "{% elif ", "{% if ");
-        C4_ERROR_IF_NOT(result, "invalid {% if %} structure");
+        C4_CHECK_MSG(result, "invalid {% if %} structure");
         if(result.which == 0) // endif
         {
             block_size += result.pos;
@@ -682,17 +682,17 @@ void TokenFor::parse(csubstr *rem, TplLocation *curr_pos)
     csubstr s = m_interior_text;
 
     size_t pos = s.find(" in ");
-    C4_ERROR_IF(pos == npos, "parse error");
+    C4_CHECK_MSG(pos != npos, "parse error");
     m_var = s.left_of(pos);
     m_val = s.right_of(pos + 4, /*include_pos*/true);
     pos = m_val.first_of(' ');
-    C4_ERROR_IF(pos == npos, "parse error");
+    C4_CHECK_MSG(pos != npos, "parse error");
     m_val = m_val.left_of(pos);
 
     csubstr body = s.right_of(m_val);
     pos = body.find(" %}");
-    C4_ERROR_IF(pos == npos, "parse error");
-    C4_ERROR_IF(pos != 0, "parse error");
+    C4_CHECK_MSG(pos != npos, "parse error");
+    C4_CHECK_MSG(pos == 0, "parse error");
     body = body.right_of(2);
     body = body.triml("\r\n");
 
@@ -763,9 +763,9 @@ size_t TokenFor::_do_render(NodeRef& root, Rope *rope, size_t start_entry, bool 
 void TokenFor::_set_loop_properties(NodeRef & root, NodeRef const& var, size_t i, size_t num) const
 {
     C4_ASSERT(num > 0);
-    C4_ERROR_IF(root.find_child(m_var).valid(), "cannot use an existing name for the loop variable value");
-    C4_ERROR_IF(root.find_child("loop").valid(), "cannot use an existing name for the loop information variable");
-    C4_ERROR_IF_NOT(root.is_map() || root.is_seq(), "for can only loop over containers");
+    C4_CHECK_MSG(!root.find_child(m_var).valid(), "cannot use an existing name for the loop variable value");
+    C4_CHECK_MSG(!root.find_child("loop").valid(), "cannot use an existing name for the loop information variable");
+    C4_CHECK_MSG(root.is_map() || root.is_seq(), "for can only loop over containers");
 
     auto v = root.append_child();
     v.set_key(m_var);

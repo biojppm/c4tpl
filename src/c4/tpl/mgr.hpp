@@ -307,7 +307,7 @@ public:
 
     iterator begin()
     {
-        if( ! m_pools.empty())
+        if(C4_LIKELY( ! m_pools.empty()))
         {
             return iterator(&m_pools.front(), &m_pools.back(), 0);
         }
@@ -318,7 +318,7 @@ public:
     }
     iterator end()
     {
-        if( ! m_pools.empty())
+        if(C4_LIKELY( ! m_pools.empty()))
         {
             return iterator(&m_pools.back(), &m_pools.back(), m_pools.back().m_num_objs);
         }
@@ -330,7 +330,7 @@ public:
 
     const_iterator begin() const
     {
-        if( ! m_pools.empty())
+        if(C4_LIKELY( ! m_pools.empty()))
         {
             return const_iterator(&m_pools.front(), &m_pools.back(), 0);
         }
@@ -341,7 +341,7 @@ public:
     }
     const_iterator end() const
     {
-        if( ! m_pools.empty())
+        if(C4_LIKELY( ! m_pools.empty()))
         {
             return const_iterator(&m_pools.back(), &m_pools.back(), m_pools.back().m_num_objs);
         }
