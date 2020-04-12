@@ -6,10 +6,6 @@ namespace tpl {
 
 TokenContainer::~TokenContainer()
 {
-    for(TokenBase &tk : *this)
-    {
-        tk.~TokenBase();
-    }
 }
 
 size_t TokenContainer::next_token(csubstr *rem, TplLocation *loc)
