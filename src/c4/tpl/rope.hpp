@@ -649,6 +649,7 @@ public:
         ret.len = 0;
         for(auto const& s : *this)
         {
+            C4_ASSERT(!buf.sub(ret.len).overlaps(s));
             memcpy(ret.str + ret.len, s.str, s.len);
             ret.len += s.len;
         }
@@ -665,11 +666,12 @@ public:
         }
         substr buf = to_substr(*cont);
         substr ret = chain_all(buf, /*error_on_excess*/false);
+        cont->resize(ret.len);
         if(ret.str == nullptr)
         {
-            cont->resize(ret.len);
             buf = to_substr(*cont);
             ret = chain_all(buf, /*error_on_excess*/true);
+            cont->resize(ret.len);
         }
         return ret;
     }

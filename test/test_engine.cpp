@@ -13,13 +13,13 @@ inline void PrintTo(const csubstr& s, ::std::ostream* os) { *os << s; }
 namespace tpl {
 
 struct tpl_results { const char* name; csubstr props_yml, result; };
-using tpl_cases = std::initializer_list< tpl_results >;
+using tpl_cases = std::initializer_list<tpl_results>;
 
 void do_engine_test(csubstr tpl, csubstr parsed_tpl, tpl_cases cases)
 {
-    std::vector< char > parsed_tpl_buf;
-    std::vector< char > parsed_yml_buf;
-    std::vector< char > result_buf;
+    std::vector<char> parsed_tpl_buf;
+    std::vector<char> parsed_yml_buf;
+    std::vector<char> result_buf;
 
     c4::tpl::Engine eng;
     c4::tpl::Rope parsed_rope;
@@ -39,6 +39,10 @@ void do_engine_test(csubstr tpl, csubstr parsed_tpl, tpl_cases cases)
         //print_tree(tree);
         eng.render(tree, &rope);
         ret = rope.chain_all_resize(&result_buf);
+        auto res = to_csubstr(result_buf);
+        EXPECT_EQ(ret.size(), res.size());
+        EXPECT_EQ(ret.data(), res.data());
+        EXPECT_TRUE(res.contains(ret) || (ret.empty() && res.empty()));
         EXPECT_EQ(ret, c.result);
     }
 }
