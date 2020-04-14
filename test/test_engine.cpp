@@ -294,6 +294,20 @@ TEST(if_elif_else, all_with_nested_if)
                    });
 }
 
+
+//-----------------------------------------------------------------------------
+
+TEST(if, equality_with_strings)
+{
+    do_engine_test("{% if foo == bar %}it is bar{% endif %}|{% if foo == \"bar\" %}it is \"bar\"{% endif %}",
+                   "<<<if>>>",
+                   tpl_cases{
+                       {"case 0", "{foo: 0, bar: 0}", "it is bar|"},
+                       {"case 1", "{foo: bar}", "|it is \"bar\""},
+                   });
+}
+
+
 //-----------------------------------------------------------------------------
 TEST(for, simple_no_vars)
 {

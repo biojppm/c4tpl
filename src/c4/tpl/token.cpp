@@ -57,6 +57,17 @@ void TokenBase::mark()
 TokenBase::PropResult TokenBase::get_property(NodeRef const& root, csubstr key, bool inside_brackets)
 {
     NodeRef n = root;
+
+    // if it is quoted, this is our value
+    if(key.begins_with('\'') || key.ends_with('"'))
+    {
+        PropResult pr;
+        pr.n = NodeRef();
+        pr.val = key.unquoted();
+        pr.success = true;
+        return pr;
+    }
+
     do {
         auto pos = key.find('.');
         if(pos != npos)
