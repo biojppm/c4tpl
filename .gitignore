@@ -1,13 +1,20 @@
 # text editor files
-*.bck
-\#*
 *~
+\#*
+*.bck
+
+# clang files
+.clangd
+.ccls-cache
+.cquery_cached_index
 
 # Visual Studio files
 .vs/
 .vscode/
+
 # QtCreator files
-CMakeLists.txt.user
+CMakeLists.txt.user*
+
 # Eclipse
 .project
 .cproject
@@ -17,6 +24,7 @@ CMakeLists.txt.user
 build/
 install/
 .python-version
+compile_commands.json
 
 # test files
 /Testing/

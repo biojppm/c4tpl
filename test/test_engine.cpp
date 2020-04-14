@@ -25,7 +25,7 @@ void do_engine_test(csubstr tpl, csubstr parsed_tpl, tpl_cases cases)
     c4::tpl::Rope parsed_rope;
     eng.parse(tpl, &parsed_rope);
     csubstr ret = parsed_rope.chain_all_resize(&parsed_tpl_buf);
-    (void)parsed_tpl;//EXPECT_EQ(ret, parsed_tpl);
+    C4_UNUSED(parsed_tpl);//EXPECT_EQ(ret, parsed_tpl);
 
     c4::yml::Tree tree;
     c4::tpl::Rope rope;

@@ -26,6 +26,6 @@ c4_add_library(c4tpl
 )
 
 c4_install_target(c4tpl)
-c4_install_exports()
+c4_install_exports(DEPENDENCIES ryml c4core)
 
 c4_add_dev_targets()
