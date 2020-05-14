@@ -431,14 +431,14 @@ public:
 
     enum : I {
         s_num_pools_max = I(NumPoolsMax),
-        s_pool_bits  = msb11<I, NumPoolsMax-1>::value, /// it's the MSB of the max pool id (which is NumPoolsMax-1)
-        s_pool_shift = I(8) * I(sizeof(I)) - s_pool_bits, /// reserve the highest bits
-        s_pos_mask   = (( ~ I(0)) >> s_pool_bits)
+        s_pool_bits  = msb11<I, NumPoolsMax-1>::value, ///< it's the MSB of the max pool id (which is NumPoolsMax-1)
+        s_pool_shift = I(8) * I(sizeof(I)) - s_pool_bits, ///< reserve the highest bits
+        s_pos_mask   = ((I(1) << s_pool_shift) - 1)
     };
 
-    static constexpr C4_ALWAYS_INLINE I _pool_shift() { return s_pool_shift; }
-    static constexpr C4_ALWAYS_INLINE I _pos_mask() { return s_pos_mask; }
-    static constexpr C4_ALWAYS_INLINE I _num_pools_max() { return s_num_pools_max; }
+    static constexpr C4_ALWAYS_INLINE I _pool_shift() noexcept { return s_pool_shift; }
+    static constexpr C4_ALWAYS_INLINE I _pos_mask() noexcept { return s_pos_mask; }
+    static constexpr C4_ALWAYS_INLINE I _num_pools_max() noexcept { return s_num_pools_max; }
 
 public:
 
